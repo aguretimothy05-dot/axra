@@ -98,33 +98,14 @@ function renderList(){
  if(!tabGroups){ items.push({id:"global",username:"Global",name:"Global Chat",isGlobal:true}); items=items.concat(allUsers); items=items.concat(groups.map(gr=>({...gr,isGroup:true,name:gr.name,username:gr.name}))); }
  else { items=groups.map(gr=>({...gr,isGroup:true,name:gr.name,username:gr.name})); }
  items.filter(u=>(!q||u.username.toLowerCase().includes(q))).forEach(u=>{
-  const el=document.createElement("div");const active=(u.isGlobal&&currentChat.type==="global")||(!u.isGlobal&&!u.isGroup&&currentChat.type==="private"&&currentChat.id===u.id)||(u.isGroup&&currentChat.type==="group"&&currentChat.id===u.id);
+  const el=document.createElement("div");const active=(u.isGlobal&&currentChat.type==="global")||(!u.isGlobal && !u.isGroup && currentChat.id==="private"&&currentChat.id===u.id)||(u.isGroup&&currentChat.type==="group"&&currentChat.id===u.id);
   el.className="chatItem"+(active?" active":"");const initial=(u.username[0]||"G").toUpperCase();
   el.innerHTML=`<div class="avatar">${initial}</div><div class="chatInfo"><div class="name">${u.isGlobal?"Global Chat":u.name||u.username}</div><div class="last">${u.isGroup?"Group • "+u.name:""}</div></div>`;
   el.onclick=()=>{if(u.isGlobal)loadGlobal();else if(u.isGroup)openGroup(u);else openPrivate(u)};list.appendChild(el)
  });
 }
-function openPrivate(u){
- currentChat={type:"private",id:u.id};
- $("chatName").textContent=u.name||u.username;
- $("chatStatus").textContent="@"+u.username;
- // FIX FOR MOBILE - hide list, show chat
- document.querySelector('.sidebar')?.classList?.remove('show');
- document.getElementById('sideBar')?.classList?.remove('active');
- $("chatPane").style.display='flex';
- loadMessage();
-}
-function openPrivate(g){
- currentChat={type:"private",id:g.id};
- $("chatName").textContent=u.name||g.username;
- $("chatStatus").textContent="@"+g.username;
- // FIX FOR MOBILE - hide list, show chat
- document.querySelector('.sidebar')?.classList?.remove('show');
- document.getElementById('sideBar')?.classList?.remove('active');
- $("chatPane").style.display='flex';
- loadMessages();
-}
-
+currentChat={type:"private",id:u._id||u.id};
+currentChat={type:"group",id:g._id||g.id};
 $("sendBtn").onclick=()=>send();$("msgInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
 function send(imgUrl){
  const txt=$("msgInput").value.trim();const image=imgUrl||null;if(!txt&&!image)return;
