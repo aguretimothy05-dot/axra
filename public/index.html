@@ -1,0 +1,167 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Axra • Axra+Media</title><script src="/socket.io/socket.io.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui}
+:root{--bg:#0e1621;--sidebar:#17212b;--hover:#202e3a;--active:#2b5278;--msg-in:#182533;--msg-out:#2b5278;--text:#f5f5f5;--text2:#7d8b99;--border:#242f3d;--accent:#2b88d8}
+body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
+#auth{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;justify-content:center;align-items:center;padding:20px}
+.card{width:100%;max-width:380px;background:var(--sidebar);border-radius:12px;padding:32px 28px}
+input{width:100%;padding:12px 14px;margin:6px 0;background:#0e1621;border:1px solid var(--border);border-radius:10px;color:#fff;outline:none}
+button{width:100%;padding:12px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-weight:600;cursor:pointer;margin-top:10px}
+.err{margin-top:10px;padding:10px;background:#3a1f2a;border-radius:8px;color:#ff8a8a;font-size:12px;display:none}
+.switch{text-align:center;margin-top:14px;color:var(--text2);font-size:13px}.switch span{color:var(--accent);cursor:pointer;font-weight:600}
+#sidebar{width:400px;min-width:300px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.topbar{height:56px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--border)}
+.tab{padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;background:#242f3d}.tab.active{background:var(--accent)}
+.searchWrap{flex:1}.searchWrap input{margin:0;background:#242f3d;border:none;border-radius:22px;padding:10px 14px}
+.list{flex:1;overflow:auto}
+.chatItem{display:flex;gap:12px;padding:9px 12px;cursor:pointer}.chatItem:hover{background:var(--hover)}.chatItem.active{background:var(--active)}
+.avatar{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#2b88d8,#5eb1ff);display:grid;place-items:center;font-weight:700;font-size:20px;flex-shrink:0;color:#fff}
+.chatInfo{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}.name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.last{font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#chat{flex:1;display:flex;flex-direction:column;background:var(--bg)}
+#chatHeader{height:56px;background:var(--sidebar);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 16px}
+#messages{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:60%;padding:8px 10px;border-radius:12px;font-size:14.5px;line-height:1.35;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.msg.me{align-self:flex-end;background:var(--msg-out);border-bottom-right-radius:4px}
+.msg.other{align-self:flex-start;background:var(--msg-in);border-bottom-left-radius:4px}
+.msg img{max-width:100%;border-radius:8px;margin-top:6px;display:block}
+#composer{background:var(--sidebar);border-top:1px solid var(--border);padding:8px 12px;display:flex;align-items:end;gap:10px}
+.iconBtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--text2);font-size:18px}
+#msgInput{flex:1;max-height:120px;min-height:42px;resize:none;padding:11px 16px;background:#242f3d;border:none;border-radius:22px;color:#fff;outline:none;font-size:14.5px}
+.sendBtn{width:42px;height:42px;border-radius:50%;background:var(--accent);display:grid;place-items:center;color:#fff;cursor:pointer;border:none;font-size:18px}
+#callOverlay{position:fixed;inset:0;background:rgba(14,22,33,0.95);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+#callOverlay video{width:90%;max-width:400px;border-radius:16px;background:#000}
+.callBtns{display:flex;gap:16px}
+.callBtn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;font-size:22px;display:grid;place-items:center}
+#createGroupBtn{padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;margin:8px}
+@media(max-width:760px){#sidebar{position:absolute;inset:0;z-index:5;width:100%}#sidebar.hidden{transform:translateX(-100%)}#chat{width:100%}.msg{max-width:80%}}
+</style></head><body>
+<div id="auth"><div class="card"><h1>Axra<span style="color:#2b88d8">+Media</span></h1><p style="text-align:center;color:#7d8b99;font-size:13px;margin:6px 0 20px">Axra+Media • Invite: AXRA2026</p>
+<div id="signupForm"><input id="s-name" placeholder="Full name"><input id="s-username" placeholder="Username"><input id="s-email" type="email" placeholder="Email"><input id="s-pass" type="password" placeholder="Password"><input id="s-invite" value="AXRA2026"><div id="s-err" class="err"></div><button id="s-btn">Start Messaging</button><div class="switch">Have account? <span id="toLogin">Log in</span></div></div>
+<div id="loginForm" style="display:none"><input id="l-id" placeholder="Email or username"><input id="l-pass" type="password" placeholder="Password"><div id="l-err" class="err"></div><button id="l-btn">Log in</button><div class="switch">No account? <span id="toSignup">Sign up</span></div></div></div></div>
+
+<div id="sidebar"><div class="topbar">
+<div style="display:flex;gap:6px"><div class="tab active" id="tabAll">All</div><div class="tab" id="tabGroups">Groups</div></div>
+<div class="searchWrap"><input id="search" placeholder="Search"></div></div>
+<button id="createGroupBtn">+ New Group</button>
+<div class="list" id="userList"></div><div id="logout" style="padding:10px 16px;cursor:pointer;color:#7d8b99;border-top:1px solid #242f3d">Log out</div></div>
+
+<div id="chat"><div id="chatHeader"><div class="avatar" id="chatAvatar" style="width:42px;height:42px;font-size:16px">G</div><div style="flex:1"><div style="font-weight:600;font-size:14px" id="chatName">Global Chat</div><div style="font-size:13px;color:#7d8b99" id="chatStatus"></div></div>
+<div class="iconBtn" id="voiceCallBtn">📞</div><div class="iconBtn" id="videoCallBtn">🎥</div>
+</div><div id="messages"></div><div id="composer"><input type="file" id="fileInput" accept="image/*" style="display:none"><div class="iconBtn" id="attachBtn">📎</div><textarea id="msgInput" placeholder="Write a message..." rows="1"></textarea><button class="sendBtn" id="sendBtn">➤</button></div></div>
+
+<div id="callOverlay"><h2 id="callStatus">Calling...</h2>
+<video id="remoteVideo" autoplay playsinline></video><video id="localVideo" autoplay muted playsinline style="width:120px;position:absolute;bottom:20px;right:20px;border:2px solid #2b88d8;border-radius:12px"></video>
+<div class="callBtns"><button class="callBtn" id="endCallBtn" style="background:#e84118">✕</button><button class="callBtn" id="muteBtn" style="background:#2f3640">🎤</button></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let token=localStorage.getItem("axra_token");
+let me=null,socket=null,currentChat={type:"global",id:null},allUsers=[],groups=[],allMessages={global:[]}, pc=null, localStream=null, currentCallTo=null;
+
+function showErr(el,m){el.textContent=m;el.style.display="block"}function hideErr(el){el.style.display="none"}
+$("toLogin").onclick=()=>{$("signupForm").style.display="none";$("loginForm").style.display="block"};
+$("toSignup").onclick=()=>{$("loginForm").style.display="none";$("signupForm").style.display="block"};
+async function api(p,o={}){o.headers=o.headers||{};o.headers["Content-Type"]="application/json";if(token)o.headers["Authorization"]="Bearer "+token;const r=await fetch(p,o);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||"Error");return d}
+$("s-btn").onclick=async()=>{hideErr($("s-err"));try{const d=await api("/api/register",{method:"POST",body:JSON.stringify({name:$("s-name").value.trim(),username:$("s-username").value.trim(),email:$("s-email").value.trim(),country:"Ghana",password:$("s-pass").value,inviteCode:$("s-invite").value.trim()})});token=d.token;localStorage.setItem("axra_token",token);await afterAuth()}catch(e){showErr($("s-err"),e.message)}};
+$("l-btn").onclick=async()=>{hideErr($("l-err"));try{const id=$("l-id").value.trim();const d=await api("/api/login",{method:"POST",body:JSON.stringify({email:id,username:id,password:$("l-pass").value})});token=d.token;localStorage.setItem("axra_token",token);await afterAuth()}catch(e){showErr($("l-err"),e.message)}};
+async function afterAuth(){try{const {user}=await api("/api/me");me=user;$("auth").style.display="none";connectSocket();await loadGroups();loadGlobal();loadUsers()}catch(e){localStorage.removeItem("axra_token");$("auth").style.display="flex"}}
+function connectSocket(){
+ if(socket)socket.disconnect();
+ socket=io({auth:{token}});
+ socket.on("global-message",m=>{allMessages.global.push(m);if(currentChat.type==="global")appendMsg(m,m.user_id===me.id,true);renderList()});
+ socket.on("private-message",m=>{const key=m.sender_id===me.id?m.receiver_id:m.sender_id;if(!allMessages[key])allMessages[key]=[];allMessages[key].push(m);if(currentChat.type==="private"&&(m.sender_id===currentChat.id||m.receiver_id===currentChat.id))appendMsg(m,m.sender_id===me.id,true);renderList()});
+ socket.on("group-message",m=>{if(!allMessages["g_"+m.group_id])allMessages["g_"+m.group_id]=[];allMessages["g_"+m.group_id].push(m);if(currentChat.type==="group"&&currentChat.id===m.group_id)appendMsg(m,m.sender_id===me.id,true);renderList()});
+ socket.on("incoming-call",async({from,fromUsername,offer,type})=>{if(!confirm(`${fromUsername} is calling you (${type}). Answer?`))return;currentCallTo=from;await startCall(false,from,offer,type)});
+ socket.on("call-answered",async({answer})=>{if(pc)await pc.setRemoteDescription(new RTCSessionDescription(answer))});
+ socket.on("ice-candidate",async({candidate})=>{if(pc&&candidate)try{await pc.addIceCandidate(new RTCIceCandidate(candidate))}catch{}});
+ socket.on("call-ended",()=>{endCallUI()});
+}
+function formatTime(d){return new Date(d).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
+function appendMsg(m,isMe,scroll){
+ const box=$("messages");const div=document.createElement("div");div.className="msg "+(isMe?"me":"other");
+ const text=(m.message||"").replace(/</g,"&lt;");
+ let imgHtml=m.image?`<img src="${m.image}" loading="lazy">`:"";
+ const sender = m.sender_username? `<div style="font-size:11px;color:#2b88d8;font-weight:600;margin-bottom:2px">${m.sender_username}</div>` : "";
+ div.innerHTML=`${sender}${text?`<div style="white-space:pre-wrap;word-break:break-word">${text}</div>`:""}${imgHtml}<div style="display:flex;justify-content:flex-end;margin-top:4px;font-size:11px;opacity:.6">${formatTime(m.created_at)}</div>`;
+ box.appendChild(div);if(scroll)box.scrollTop=box.scrollHeight;
+}
+async function loadGlobal(){currentChat={type:"global",id:null};$("chatName").textContent="Global Chat";$("chatStatus").textContent="Axra Global";$("chatAvatar").textContent="G";$("messages").innerHTML="";const {messages}=await api("/api/global-messages");allMessages.global=messages;messages.forEach(m=>appendMsg(m,m.user_id===me.id,false));$("messages").scrollTop=$("messages").scrollHeight;renderList()}
+async function loadUsers(){const {users}=await api("/api/users");allUsers=users;renderList()}
+async function loadGroups(){const {groups:g}=await api("/api/groups");groups=g;renderList()}
+function renderList(){
+ const list=$("userList");list.innerHTML="";
+ const q=$("search").value.toLowerCase();
+ const tabGroups=$("tabGroups").classList.contains("active");
+ let items=[];
+ if(!tabGroups){ items.push({id:"global",username:"Global",name:"Global Chat",isGlobal:true}); items=items.concat(allUsers); items=items.concat(groups.map(gr=>({...gr,isGroup:true,name:gr.name,username:gr.name}))); }
+ else { items=groups.map(gr=>({...gr,isGroup:true,name:gr.name,username:gr.name})); }
+ items.filter(u=>(!q||u.username.toLowerCase().includes(q))).forEach(u=>{
+  const el=document.createElement("div");const active=(u.isGlobal&&currentChat.type==="global")||(!u.isGlobal&&!u.isGroup&&currentChat.type==="private"&&currentChat.id===u.id)||(u.isGroup&&currentChat.type==="group"&&currentChat.id===u.id);
+  el.className="chatItem"+(active?" active":"");const initial=(u.username[0]||"G").toUpperCase();
+  el.innerHTML=`<div class="avatar">${initial}</div><div class="chatInfo"><div class="name">${u.isGlobal?"Global Chat":u.name||u.username}</div><div class="last">${u.isGroup?"Group • "+u.name:""}</div></div>`;
+  el.onclick=()=>{if(u.isGlobal)loadGlobal();else if(u.isGroup)openGroup(u);else openPrivate(u)};list.appendChild(el)
+ });
+}
+async function openPrivate(u){currentChat={type:"private",id:u.id};$("chatName").textContent=u.name||u.username;$("chatStatus").textContent="@"+u.username;$("chatAvatar").textContent=u.username[0].toUpperCase();$("messages").innerHTML="";const {messages}=await api("/api/private-messages/"+u.id);allMessages[u.id]=messages;messages.forEach(m=>appendMsg(m,m.sender_id===me.id,false));$("messages").scrollTop=$("messages").scrollHeight;renderList()}
+async function openGroup(g){currentChat={type:"group",id:g.id};$("chatName").textContent=g.name;$("chatStatus").textContent="Group • "+g.name;$("chatAvatar").textContent=g.name[0].toUpperCase();$("messages").innerHTML="";const {messages}=await api("/api/group-messages/"+g.id);allMessages["g_"+g.id]=messages;messages.forEach(m=>appendMsg(m,m.sender_id===me.id,false));$("messages").scrollTop=$("messages").scrollHeight;renderList()}
+
+$("sendBtn").onclick=()=>send();$("msgInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
+function send(imgUrl){
+ const txt=$("msgInput").value.trim();const image=imgUrl||null;if(!txt&&!image)return;
+ if(currentChat.type==="global")socket.emit("global-message",{message:txt,image});
+ else if(currentChat.type==="private")socket.emit("private-message",{receiver_id:currentChat.id,message:txt,image});
+ else if(currentChat.type==="group")socket.emit("group-message",{group_id:currentChat.id,message:txt,image});
+ $("msgInput").value="";
+}
+$("attachBtn").onclick=()=>{$("fileInput").click()};
+$("fileInput").onchange=async()=>{
+ const file=$("fileInput").files[0]; if(!file)return;const fd=new FormData();fd.append("image",file);$("sendBtn").textContent="…";
+ try{const r=await fetch("/api/upload",{method:"POST",headers:{Authorization:"Bearer "+token},body:fd});const d=await r.json();if(!r.ok)throw new Error(d.message);send(d.url);}catch(e){alert("Upload failed: "+e.message)}
+ $("sendBtn").textContent="➤";$("fileInput").value="";
+};
+$("createGroupBtn").onclick=async()=>{
+ const name=prompt("Group name? (e.g. Legon CS 2024)"); if(!name)return;
+ const memberUsernames=prompt("Add members by username comma-separated (e.g. dave,ernest) — leave empty for just you");
+ let memberIds=[]; if(memberUsernames){ const names=memberUsernames.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean); memberIds=allUsers.filter(u=>names.includes(u.username)).map(u=>u.id); }
+ try{const {group}=await api("/api/groups",{method:"POST",body:JSON.stringify({name,memberIds})}); await loadGroups(); openGroup(group);}catch(e){alert(e.message)}
+};
+$("tabAll").onclick=()=>{$("tabAll").classList.add("active");$("tabGroups").classList.remove("active");renderList()};
+$("tabGroups").onclick=()=>{$("tabGroups").classList.add("active");$("tabAll").classList.remove("active");renderList()};
+$("logout").onclick=()=>{localStorage.removeItem("axra_token");location.reload()};
+$("search").addEventListener("input",renderList);
+
+// CALLING LOGIC
+async function createPC(targetId){
+ pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+ pc.onicecandidate=e=>{if(e.candidate) socket.emit("ice-candidate",{to:targetId,candidate:e.candidate})};
+ pc.ontrack=e=>{$("remoteVideo").srcObject=e.streams[0]};
+ pc.onconnectionstatechange=()=>{if(pc.connectionState==="failed"||pc.connectionState==="disconnected")endCallUI()};
+ return pc;
+}
+async function startCall(isCaller, targetId, remoteOffer, type){
+ $("callOverlay").style.display="flex";
+ $("callStatus").textContent= type==="video"?"Video calling...":"Voice calling...";
+ try{ localStream=await navigator.mediaDevices.getUserMedia({video:type==="video",audio:true}); }catch{alert("Need mic/cam permission");endCallUI();return;}
+ $("localVideo").srcObject=localStream;
+ $("remoteVideo").style.display= type==="video"?"block":"none";
+ await createPC(targetId);
+ localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+ if(isCaller){
+  const offer=await pc.createOffer(); await pc.setLocalDescription(offer);
+  socket.emit("call-user",{to:targetId,offer,type});
+ }else{
+  await pc.setRemoteDescription(new RTCSessionDescription(remoteOffer));
+  const answer=await pc.createAnswer(); await pc.setLocalDescription(answer);
+  socket.emit("answer-call",{to:targetId,answer});
+ }
+}
+$("voiceCallBtn").onclick=()=>{if(currentChat.type!=="private")return alert("Call only in private chat"); currentCallTo=currentChat.id; startCall(true,currentChat.id,null,"voice");};
+$("videoCallBtn").onclick=()=>{if(currentChat.type!=="private")return alert("Video call only in private chat"); currentCallTo=currentChat.id; startCall(true,currentChat.id,null,"video");};
+$("endCallBtn").onclick=()=>{ if(currentCallTo) socket.emit("end-call",{to:currentCallTo}); endCallUI(); };
+function endCallUI(){ if(pc){pc.close();pc=null;} if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;} $("callOverlay").style.display="none"; $("remoteVideo").srcObject=null; $("localVideo").srcObject=null; currentCallTo=null; }
+$("muteBtn").onclick=()=>{ if(!localStream)return; const a=localStream.getAudioTracks()[0]; if(a){a.enabled=!a.enabled; $("muteBtn").textContent=a.enabled?"🎤":"🔇"} };
+
+if(token)afterAuth();
+</script></body></html>
