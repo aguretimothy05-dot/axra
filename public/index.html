@@ -3,7 +3,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui}
-:root{--bg:#0e1621;--sidebar:#17212b;--hover:#202e3a;--active:#2b5278;--msg-in:#182533;--msg-out:#2b5278;--text:#f5f5f5;--text2:#7d8b99;--border:#242f3d;--accent:#2b88d8}
+:root{--bg:#0e1621;--sidebar:#17212b;--hover:#202e3a;--active:#2b5278;--msg-in:#182533;--msg-out:#0a0b0b;--text:#f5f5f5;--text2:#7d8b99;--border:#242f3d;--accent:#2b88d8}
 body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
 #auth{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;justify-content:center;align-items:center;padding:20px}
 .card{width:100%;max-width:380px;background:var(--sidebar);border-radius:12px;padding:32px 28px}
@@ -104,8 +104,26 @@ function renderList(){
   el.onclick=()=>{if(u.isGlobal)loadGlobal();else if(u.isGroup)openGroup(u);else openPrivate(u)};list.appendChild(el)
  });
 }
-async function openPrivate(u){currentChat={type:"private",id:u.id};$("chatName").textContent=u.name||u.username;$("chatStatus").textContent="@"+u.username;$("chatAvatar").textContent=u.username[0].toUpperCase();$("messages").innerHTML="";const {messages}=await api("/api/private-messages/"+u.id);allMessages[u.id]=messages;messages.forEach(m=>appendMsg(m,m.sender_id===me.id,false));$("messages").scrollTop=$("messages").scrollHeight;renderList()}
-async function openGroup(g){currentChat={type:"group",id:g.id};$("chatName").textContent=g.name;$("chatStatus").textContent="Group • "+g.name;$("chatAvatar").textContent=g.name[0].toUpperCase();$("messages").innerHTML="";const {messages}=await api("/api/group-messages/"+g.id);allMessages["g_"+g.id]=messages;messages.forEach(m=>appendMsg(m,m.sender_id===me.id,false));$("messages").scrollTop=$("messages").scrollHeight;renderList()}
+function openPrivate(u){
+ currentChat={type:"private",id:u.id};
+ $("chatName").textContent=u.name||u.username;
+ $("chatStatus").textContent="@"+u.username;
+ // FIX FOR MOBILE - hide list, show chat
+ document.querySelector('.sidebar')?.classList?.remove('show');
+ document.getElementById('sideBar')?.classList?.remove('active');
+ $("chatPane").style.display='flex';
+ loadMessage();
+}
+function openPrivate(g){
+ currentChat={type:"private",id:g.id};
+ $("chatName").textContent=u.name||g.username;
+ $("chatStatus").textContent="@"+g.username;
+ // FIX FOR MOBILE - hide list, show chat
+ document.querySelector('.sidebar')?.classList?.remove('show');
+ document.getElementById('sideBar')?.classList?.remove('active');
+ $("chatPane").style.display='flex';
+ loadMessages();
+}
 
 $("sendBtn").onclick=()=>send();$("msgInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
 function send(imgUrl){
