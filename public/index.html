@@ -1,167 +1,277 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Axra • Axra+Media</title><script src="/socket.io/socket.io.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Axra - Chat, Call, Photos &amp; Stories</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui}
-:root{--bg:#0e1621;--sidebar:#17212b;--hover:#202e3a;--active:#2b5278;--msg-in:#182533;--msg-out:#2b5278;--text:#f5f5f5;--text2:#7d8b99;--border:#242f3d;--accent:#2b88d8}
-body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
-#auth{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;justify-content:center;align-items:center;padding:20px}
-.card{width:100%;max-width:380px;background:var(--sidebar);border-radius:12px;padding:32px 28px}
-input{width:100%;padding:12px 14px;margin:6px 0;background:#0e1621;border:1px solid var(--border);border-radius:10px;color:#fff;outline:none}
-button{width:100%;padding:12px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-weight:600;cursor:pointer;margin-top:10px}
-.err{margin-top:10px;padding:10px;background:#3a1f2a;border-radius:8px;color:#ff8a8a;font-size:12px;display:none}
-.switch{text-align:center;margin-top:14px;color:var(--text2);font-size:13px}.switch span{color:var(--accent);cursor:pointer;font-weight:600}
-#sidebar{width:400px;min-width:300px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column}
-.topbar{height:56px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--border)}
-.tab{padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;background:#242f3d}.tab.active{background:var(--accent)}
-.searchWrap{flex:1}.searchWrap input{margin:0;background:#242f3d;border:none;border-radius:22px;padding:10px 14px}
-.list{flex:1;overflow:auto}
-.chatItem{display:flex;gap:12px;padding:9px 12px;cursor:pointer}.chatItem:hover{background:var(--hover)}.chatItem.active{background:var(--active)}
-.avatar{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#2b88d8,#5eb1ff);display:grid;place-items:center;font-weight:700;font-size:20px;flex-shrink:0;color:#fff}
-.chatInfo{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}.name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.last{font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#chat{flex:1;display:flex;flex-direction:column;background:var(--bg)}
-#chatHeader{height:56px;background:var(--sidebar);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 16px}
-#messages{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
-.msg{max-width:60%;padding:8px 10px;border-radius:12px;font-size:14.5px;line-height:1.35;box-shadow:0 1px 2px rgba(0,0,0,.3)}
-.msg.me{align-self:flex-end;background:var(--msg-out);border-bottom-right-radius:4px}
-.msg.other{align-self:flex-start;background:var(--msg-in);border-bottom-left-radius:4px}
-.msg img{max-width:100%;border-radius:8px;margin-top:6px;display:block}
-#composer{background:var(--sidebar);border-top:1px solid var(--border);padding:8px 12px;display:flex;align-items:end;gap:10px}
-.iconBtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--text2);font-size:18px}
-#msgInput{flex:1;max-height:120px;min-height:42px;resize:none;padding:11px 16px;background:#242f3d;border:none;border-radius:22px;color:#fff;outline:none;font-size:14.5px}
-.sendBtn{width:42px;height:42px;border-radius:50%;background:var(--accent);display:grid;place-items:center;color:#fff;cursor:pointer;border:none;font-size:18px}
-#callOverlay{position:fixed;inset:0;background:rgba(14,22,33,0.95);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px}
-#callOverlay video{width:90%;max-width:400px;border-radius:16px;background:#000}
-.callBtns{display:flex;gap:16px}
-.callBtn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;font-size:22px;display:grid;place-items:center}
-#createGroupBtn{padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;margin:8px}
-@media(max-width:760px){#sidebar{position:absolute;inset:0;z-index:5;width:100%}#sidebar.hidden{transform:translateX(-100%)}#chat{width:100%}.msg{max-width:80%}}
-</style></head><body>
-<div id="auth"><div class="card"><h1>Axra<span style="color:#2b88d8">+Media</span></h1><p style="text-align:center;color:#7d8b99;font-size:13px;margin:6px 0 20px">Axra+Media • Invite: AXRA2026</p>
-<div id="signupForm"><input id="s-name" placeholder="Full name"><input id="s-username" placeholder="Username"><input id="s-email" type="email" placeholder="Email"><input id="s-pass" type="password" placeholder="Password"><input id="s-invite" value="AXRA2026"><div id="s-err" class="err"></div><button id="s-btn">Start Messaging</button><div class="switch">Have account? <span id="toLogin">Log in</span></div></div>
-<div id="loginForm" style="display:none"><input id="l-id" placeholder="Email or username"><input id="l-pass" type="password" placeholder="Password"><div id="l-err" class="err"></div><button id="l-btn">Log in</button><div class="switch">No account? <span id="toSignup">Sign up</span></div></div></div></div>
-
-<div id="sidebar"><div class="topbar">
-<div style="display:flex;gap:6px"><div class="tab active" id="tabAll">All</div><div class="tab" id="tabGroups">Groups</div></div>
-<div class="searchWrap"><input id="search" placeholder="Search"></div></div>
-<button id="createGroupBtn">+ New Group</button>
-<div class="list" id="userList"></div><div id="logout" style="padding:10px 16px;cursor:pointer;color:#7d8b99;border-top:1px solid #242f3d">Log out</div></div>
-
-<div id="chat"><div id="chatHeader"><div class="avatar" id="chatAvatar" style="width:42px;height:42px;font-size:16px">G</div><div style="flex:1"><div style="font-weight:600;font-size:14px" id="chatName">Global Chat</div><div style="font-size:13px;color:#7d8b99" id="chatStatus"></div></div>
-<div class="iconBtn" id="voiceCallBtn">📞</div><div class="iconBtn" id="videoCallBtn">🎥</div>
-</div><div id="messages"></div><div id="composer"><input type="file" id="fileInput" accept="image/*" style="display:none"><div class="iconBtn" id="attachBtn">📎</div><textarea id="msgInput" placeholder="Write a message..." rows="1"></textarea><button class="sendBtn" id="sendBtn">➤</button></div></div>
-
-<div id="callOverlay"><h2 id="callStatus">Calling...</h2>
-<video id="remoteVideo" autoplay playsinline></video><video id="localVideo" autoplay muted playsinline style="width:120px;position:absolute;bottom:20px;right:20px;border:2px solid #2b88d8;border-radius:12px"></video>
-<div class="callBtns"><button class="callBtn" id="endCallBtn" style="background:#e84118">✕</button><button class="callBtn" id="muteBtn" style="background:#2f3640">🎤</button></div></div>
-
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;height:100vh;background:#0a0e1a;color:#fff;font-family:system-ui,-apple-system;overflow:hidden}
+#sidebar{width:360px;background:#111827;border-right:1px solid #1f2937;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+#sidebarHeader{padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+#logo{font-weight:900;font-size:22px;letter-spacing:-0.5px}
+#logo span{color:#3b82f6}
+#storiesBar{display:flex;gap:12px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid #1f2937}
+#storiesBar::-webkit-scrollbar{display:none}
+.storyItem{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0}
+.storyRing{width:60px;height:60px;border-radius:50%;padding:3px;background:linear-gradient(45deg,#3b82f6,#8b5cf6,#ec4899)}
+.storyRing.seen{background:#374151}
+.storyAvatar{width:100%;height:100%;border-radius:50%;background:#1f2937;display:flex;align-items:center;justify-content:center;font-weight:800;border:3px solid #111827;background-size:cover;background-position:center}
+.storyName{font-size:11px;color:#9ca3af;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#chatList{flex:1;overflow-y:auto}
+.chatItem{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-left:3px solid transparent;transition:0.15s}
+.chatItem:hover{background:#1f2937}
+.chatItem.active{background:#1e293b;border-left-color:#3b82f6}
+.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.chatInfo{flex:1;min-width:0}
+.chatTop{display:flex;justify-content:space-between}
+.name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.time{font-size:11px;color:#6b7280}
+.last{font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+#chatPane{flex:1;display:flex;flex-direction:column;background:#0f172a;min-width:0}
+#chatHeader{padding:12px 16px;border-bottom:1px solid #1f2937;display:flex;align-items:center;gap:12px;background:#111827}
+#backBtn{display:none;cursor:pointer;padding:8px 12px;background:#1f2937;border-radius:8px;font-weight:600}
+#headerInfo{flex:1;min-width:0}
+#chatName{font-weight:700;font-size:16px}
+#chatStatus{font-size:12px;color:#6b7280}
+.headerBtn{width:38px;height:38px;border-radius:50%;background:#1f2937;border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.headerBtn:hover{background:#374151}
+#messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#0a0e1a}
+.msg{max-width:72%;padding:10px 14px;border-radius:18px;background:#1f2937;line-height:1.4;font-size:14px;word-break:break-word;position:relative}
+.msg.me{align-self:flex-end;background:#2563eb;border-bottom-right-radius:6px}
+.msg.other{border-bottom-left-radius:6px}
+.msg img.chat-img{max-width:100%;max-height:300px;border-radius:12px;display:block;margin-top:8px;cursor:pointer}
+.msg.msgTime{font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px;text-align:right}
+#previewBar{display:none;padding:10px 14px;background:#111827;border-top:1px solid #1f2937;align-items:center;gap:10px}
+#previewBar img{max-height:70px;border-radius:8px}
+#inputArea{display:flex;gap:8px;padding:12px 14px;border-top:1px solid #1f2937;background:#111827;align-items:center}
+#msgInput{flex:1;padding:12px 16px;border-radius:24px;border:1px solid #374151;background:#1f2937;color:#fff;outline:none;font-size:14px}
+#msgInput:focus{border-color:#3b82f6}
+.iconBtn{width:42px;height:42px;border-radius:50%;border:none;background:#1f2937;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.iconBtn:hover{background:#374151}
+.sendBtn{padding:10px 20px;border-radius:24px;border:none;background:#2563eb;color:#fff;font-weight:700;cursor:pointer}
+.sendBtn:hover{background:#1d4ed8}
+#callModal,#storyModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:100;align-items:center;justify-content:center;flex-direction:column}
+.callCard{background:#111827;padding:32px;border-radius:24px;text-align:center;min-width:320px;border:1px solid #1f2937}
+.callAvatar{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:800}
+.callActions{display:flex;gap:16px;justify-content:center;margin-top:24px}
+.callBtn{width:60px;height:60px;border-radius:50%;border:none;font-size:24px;cursor:pointer}
+.callBtn.end{background:#ef4444;color:#fff}
+.callBtn.accept{background:#22c55e;color:#fff}
+.storyView{position:relative;width:100%;max-width:400px;height:90vh;background:#000;border-radius:16px;overflow:hidden}
+.storyProgress{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:4px;z-index:2}
+.prog{height:3px;background:rgba(255,255,255,0.3);flex:1;border-radius:2px;overflow:hidden}
+.progFill{height:100%;background:#fff;width:0%;transition:width 0.1s}
+.storyContent{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.storyContent img{max-width:100%;max-height:100%;object-fit:contain}
+.storyTop{position:absolute;top:20px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:2}
+@media(max-width:768px){#sidebar{position:absolute;inset:0;width:100%;z-index:10}#sidebar.hidden{transform:translateX(-100%)}#backBtn{display:flex}#chatPane{width:100%}.msg{max-width:85%}}
+</style>
+</head>
+<body>
+<div id="sidebar">
+<div id="sidebarHeader"><div id="logo">Axra<span>.</span></div><div style="display:flex;gap:8px"><button class="iconBtn" onclick="newGroup()" title="New Group">＋</button></div></div>
+<div id="storiesBar"></div>
+<div id="chatList"></div>
+</div>
+<div id="chatPane">
+<div id="chatHeader">
+<span id="backBtn" onclick="showList()">←</span>
+<div class="avatar" id="headerAvatar">G</div>
+<div id="headerInfo"><div id="chatName">Global Chat</div><div id="chatStatus">Axra Global • Online</div></div>
+<button class="headerBtn" onclick="startCall(false)" title="Voice call">📞</button>
+<button class="headerBtn" onclick="startCall(true)" title="Video call">🎥</button>
+<button class="headerBtn" onclick="showChatInfo()" title="Info">⋯</button>
+</div>
+<div id="messages"></div>
+<div id="previewBar"><img id="previewImg"><div style="flex:1"><div id="previewName" style="font-size:12px;color:#9ca3af"></div><div style="font-size:11px;color:#6b7280">Ready to send</div></div><button class="iconBtn" onclick="cancelPreview()">✕</button><button class="sendBtn" onclick="sendImage()">Send</button></div>
+<div id="inputArea">
+<button class="iconBtn" onclick="document.getElementById('fileInput').click()" title="Photo">📎</button>
+<input type="file" id="fileInput" accept="image/*,video/*" hidden>
+<input id="msgInput" placeholder="Type a message...">
+<button class="sendBtn" onclick="send()">Send</button>
+</div>
+</div>
+<div id="callModal"><div class="callCard"><div class="callAvatar" id="callAvatar">D</div><div id="callName" style="font-size:20px;font-weight:700">David</div><div id="callStatus" style="color:#9ca3af;margin-top:8px">Calling...</div><div class="callActions"><button class="callBtn end" onclick="endCall()">✕</button><button class="callBtn accept" id="acceptBtn" onclick="acceptCall()" style="display:none">✓</button></div></div></div>
+<div id="storyModal" onclick="closeStory()"><div class="storyView" onclick="event.stopPropagation()"><div class="storyProgress" id="storyProgress"></div><div class="storyTop"><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:32px;height:32px" id="storyAvatar">U</div><div id="storyUser" style="font-weight:600">User</div></div><button class="iconBtn" onclick="closeStory()">✕</button></div><div class="storyContent" id="storyContent"></div></div></div>
 <script>
 const $=id=>document.getElementById(id);
-let token=localStorage.getItem("axra_token");
-let me=null,socket=null,currentChat={type:"global",id:null},allUsers=[],groups=[],allMessages={global:[]}, pc=null, localStream=null, currentCallTo=null;
-
-function showErr(el,m){el.textContent=m;el.style.display="block"}function hideErr(el){el.style.display="none"}
-$("toLogin").onclick=()=>{$("signupForm").style.display="none";$("loginForm").style.display="block"};
-$("toSignup").onclick=()=>{$("loginForm").style.display="none";$("signupForm").style.display="block"};
-async function api(p,o={}){o.headers=o.headers||{};o.headers["Content-Type"]="application/json";if(token)o.headers["Authorization"]="Bearer "+token;const r=await fetch(p,o);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||"Error");return d}
-$("s-btn").onclick=async()=>{hideErr($("s-err"));try{const d=await api("/api/register",{method:"POST",body:JSON.stringify({name:$("s-name").value.trim(),username:$("s-username").value.trim(),email:$("s-email").value.trim(),country:"Ghana",password:$("s-pass").value,inviteCode:$("s-invite").value.trim()})});token=d.token;localStorage.setItem("axra_token",token);await afterAuth()}catch(e){showErr($("s-err"),e.message)}};
-$("l-btn").onclick=async()=>{hideErr($("l-err"));try{const id=$("l-id").value.trim();const d=await api("/api/login",{method:"POST",body:JSON.stringify({email:id,username:id,password:$("l-pass").value})});token=d.token;localStorage.setItem("axra_token",token);await afterAuth()}catch(e){showErr($("l-err"),e.message)}};
-async function afterAuth(){try{const {user}=await api("/api/me");me=user;$("auth").style.display="none";connectSocket();await loadGroups();loadGlobal();loadUsers()}catch(e){localStorage.removeItem("axra_token");$("auth").style.display="flex"}}
-function connectSocket(){
- if(socket)socket.disconnect();
- socket=io({auth:{token}});
- socket.on("global-message",m=>{allMessages.global.push(m);if(currentChat.type==="global")appendMsg(m,m.user_id===me.id,true);renderList()});
- socket.on("private-message",m=>{const key=m.sender_id===me.id?m.receiver_id:m.sender_id;if(!allMessages[key])allMessages[key]=[];allMessages[key].push(m);if(currentChat.type==="private"&&(m.sender_id===currentChat.id||m.receiver_id===currentChat.id))appendMsg(m,m.sender_id===me.id,true);renderList()});
- socket.on("group-message",m=>{if(!allMessages["g_"+m.group_id])allMessages["g_"+m.group_id]=[];allMessages["g_"+m.group_id].push(m);if(currentChat.type==="group"&&currentChat.id===m.group_id)appendMsg(m,m.sender_id===me.id,true);renderList()});
- socket.on("incoming-call",async({from,fromUsername,offer,type})=>{if(!confirm(`${fromUsername} is calling you (${type}). Answer?`))return;currentCallTo=from;await startCall(false,from,offer,type)});
- socket.on("call-answered",async({answer})=>{if(pc)await pc.setRemoteDescription(new RTCSessionDescription(answer))});
- socket.on("ice-candidate",async({candidate})=>{if(pc&&candidate)try{await pc.addIceCandidate(new RTCIceCandidate(candidate))}catch{}});
- socket.on("call-ended",()=>{endCallUI()});
+let allUsers=[],groups=[],stories=[],currentChat={type:"global",id:null};
+let token=localStorage.getItem('token');
+let myUser=JSON.parse(localStorage.getItem('user')||'null');
+let pendingImageUrl=null;
+let socket=null;
+async function api(p,opts={}){
+ opts.headers={...(opts.headers||{}),'Content-Type':'application/json'};
+ if(token) opts.headers['Authorization']='Bearer '+token;
+ let r=await fetch(p,opts);
+ let j=await r.json().catch(()=>({}));
+ if(!r.ok) throw j;
+ return j;
 }
-function formatTime(d){return new Date(d).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
-function appendMsg(m,isMe,scroll){
- const box=$("messages");const div=document.createElement("div");div.className="msg "+(isMe?"me":"other");
- const text=(m.message||"").replace(/</g,"&lt;");
- let imgHtml=m.image?`<img src="${m.image}" loading="lazy">`:"";
- const sender = m.sender_username? `<div style="font-size:11px;color:#2b88d8;font-weight:600;margin-bottom:2px">${m.sender_username}</div>` : "";
- div.innerHTML=`${sender}${text?`<div style="white-space:pre-wrap;word-break:break-word">${text}</div>`:""}${imgHtml}<div style="display:flex;justify-content:flex-end;margin-top:4px;font-size:11px;opacity:.6">${formatTime(m.created_at)}</div>`;
- box.appendChild(div);if(scroll)box.scrollTop=box.scrollHeight;
-}
-async function loadGlobal(){currentChat={type:"global",id:null};$("chatName").textContent="Global Chat";$("chatStatus").textContent="Axra Global";$("chatAvatar").textContent="G";$("messages").innerHTML="";const {messages}=await api("/api/global-messages");allMessages.global=messages;messages.forEach(m=>appendMsg(m,m.user_id===me.id,false));$("messages").scrollTop=$("messages").scrollHeight;renderList()}
-async function loadUsers(){const {users}=await api("/api/users");allUsers=users;renderList()}
-async function loadGroups(){const {groups:g}=await api("/api/groups");groups=g;renderList()}
-function renderList(){
- const list=$("userList");list.innerHTML="";
- const q=$("search").value.toLowerCase();
- const tabGroups=$("tabGroups").classList.contains("active");
- let items=[];
- if(!tabGroups){ items.push({id:"global",username:"Global",name:"Global Chat",isGlobal:true}); items=items.concat(allUsers); items=items.concat(groups.map(gr=>({...gr,isGroup:true,name:gr.name,username:gr.name}))); }
- else { items=groups.map(gr=>({...gr,isGroup:true,name:gr.name,username:gr.name})); }
- items.filter(u=>(!q||u.username.toLowerCase().includes(q))).forEach(u=>{
-  const el=document.createElement("div");const active=(u.isGlobal&&currentChat.type==="global")||(!u.isGlobal&&!u.isGroup&&currentChat.type==="private"&&currentChat.id===u.id)||(u.isGroup&&currentChat.type==="group"&&currentChat.id===u.id);
-  el.className="chatItem"+(active?" active":"");const initial=(u.username[0]||"G").toUpperCase();
-  el.innerHTML=`<div class="avatar">${initial}</div><div class="chatInfo"><div class="name">${u.isGlobal?"Global Chat":u.name||u.username}</div><div class="last">${u.isGroup?"Group • "+u.name:""}</div></div>`;
-  el.onclick=()=>{if(u.isGlobal)loadGlobal();else if(u.isGroup)openGroup(u);else openPrivate(u)};list.appendChild(el)
+function showList(){ $('sidebar').classList.remove('hidden'); if(window.innerWidth<=768){ $('sidebar').style.display='flex'; $('chatPane').style.display='none'; } else { $('sidebar').style.display='flex'; $('chatPane').style.display='flex'; } }
+function showChat(){ $('sidebar').classList.add('hidden'); if(window.innerWidth<=768){ $('sidebar').style.display='none'; $('chatPane').style.display='flex'; } else { $('sidebar').style.display='flex'; $('chatPane').style.display='flex'; } setTimeout(()=>{ $('sidebar').classList.remove('hidden'); if(window.innerWidth<=768) $('sidebar').style.display='none'; },10); }
+function renderStories(){
+ const bar=$('storiesBar'); bar.innerHTML='';
+ const add=document.createElement('div'); add.className='storyItem'; add.innerHTML=`<div class="storyRing" style="background:#1f2937"><div class="storyAvatar">＋</div></div><div class="storyName">Your Story</div>`;
+ add.onclick=()=>document.getElementById('fileInput').click();
+ bar.appendChild(add);
+ (allUsers.slice(0,8)).forEach(u=>{
+	const el=document.createElement('div'); el.className='storyItem';
+	el.innerHTML=`<div class="storyRing"><div class="storyAvatar">${(u.username||'U')[0].toUpperCase()}</div></div><div class="storyName">${u.username}</div>`;
+	el.onclick=()=>openStory(u);
+	bar.appendChild(el);
+ });
+ stories.forEach(s=>{
+	const el=document.createElement('div'); el.className='storyItem';
+	el.innerHTML=`<div class="storyRing"><div class="storyAvatar" style="background-image:url('${s.image}')"></div></div><div class="storyName">${s.username}</div>`;
+	el.onclick=()=>openStory(s,true);
+	bar.appendChild(el);
  });
 }
-async function openPrivate(u){currentChat={type:"private",id:u.id};$("chatName").textContent=u.name||u.username;$("chatStatus").textContent="@"+u.username;$("chatAvatar").textContent=u.username[0].toUpperCase();$("messages").innerHTML="";const {messages}=await api("/api/private-messages/"+u.id);allMessages[u.id]=messages;messages.forEach(m=>appendMsg(m,m.sender_id===me.id,false));$("messages").scrollTop=$("messages").scrollHeight;renderList()}
-async function openGroup(g){currentChat={type:"group",id:g.id};$("chatName").textContent=g.name;$("chatStatus").textContent="Group • "+g.name;$("chatAvatar").textContent=g.name[0].toUpperCase();$("messages").innerHTML="";const {messages}=await api("/api/group-messages/"+g.id);allMessages["g_"+g.id]=messages;messages.forEach(m=>appendMsg(m,m.sender_id===me.id,false));$("messages").scrollTop=$("messages").scrollHeight;renderList()}
-
-$("sendBtn").onclick=()=>send();$("msgInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
-function send(imgUrl){
- const txt=$("msgInput").value.trim();const image=imgUrl||null;if(!txt&&!image)return;
- if(currentChat.type==="global")socket.emit("global-message",{message:txt,image});
- else if(currentChat.type==="private")socket.emit("private-message",{receiver_id:currentChat.id,message:txt,image});
- else if(currentChat.type==="group")socket.emit("group-message",{group_id:currentChat.id,message:txt,image});
- $("msgInput").value="";
+function renderList(q=''){
+ const list=$('chatList'); list.innerHTML='';
+ let items=[]; items.push({username:'Global',name:'Global Chat',isGlobal:true,time:'now',last:'Axra Global chat'});
+ items=items.concat(allUsers.map(u=>({...u,name:u.name||u.username,last:'@'+u.username,time:''})));
+ items=items.concat(groups.map(g=>({...g,isGroup:true,name:g.name,last:'Group • '+g.members?.length+' members',time:''})));
+ const filter=(q||'').toLowerCase();
+ items.filter(u=>!q|| (u.name||'').toLowerCase().includes(filter) || (u.username||'').toLowerCase().includes(filter))
+.forEach(u=>{
+	const el=document.createElement('div');
+	const isActive = (u.isGlobal && currentChat.type==='global') || (!u.isGlobal &&!u.isGroup && currentChat.id === (u._id||u.id)) || (u.isGroup && currentChat.id === (u._id||u.id));
+	el.className='chatItem'+(isActive?' active':'');
+	const initial=(u.username||u.name||'G')[0].toUpperCase();
+	el.innerHTML=`<div class="avatar">${initial}</div><div class="chatInfo"><div class="chatTop"><div class="name">${u.isGlobal?'Global Chat':(u.name||u.username)}</div><div class="time">${u.time||''}</div></div><div class="last">${u.last||''}</div></div>`;
+	el.onclick=()=>{ if(u.isGlobal) loadGlobal(); else if(u.isGroup) openGroup(u); else openPrivate(u); };
+	list.appendChild(el);
+ });
 }
-$("attachBtn").onclick=()=>{$("fileInput").click()};
-$("fileInput").onchange=async()=>{
- const file=$("fileInput").files[0]; if(!file)return;const fd=new FormData();fd.append("image",file);$("sendBtn").textContent="…";
- try{const r=await fetch("/api/upload",{method:"POST",headers:{Authorization:"Bearer "+token},body:fd});const d=await r.json();if(!r.ok)throw new Error(d.message);send(d.url);}catch(e){alert("Upload failed: "+e.message)}
- $("sendBtn").textContent="➤";$("fileInput").value="";
-};
-$("createGroupBtn").onclick=async()=>{
- const name=prompt("Group name? (e.g. Legon CS 2024)"); if(!name)return;
- const memberUsernames=prompt("Add members by username comma-separated (e.g. dave,ernest) — leave empty for just you");
- let memberIds=[]; if(memberUsernames){ const names=memberUsernames.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean); memberIds=allUsers.filter(u=>names.includes(u.username)).map(u=>u.id); }
- try{const {group}=await api("/api/groups",{method:"POST",body:JSON.stringify({name,memberIds})}); await loadGroups(); openGroup(group);}catch(e){alert(e.message)}
-};
-$("tabAll").onclick=()=>{$("tabAll").classList.add("active");$("tabGroups").classList.remove("active");renderList()};
-$("tabGroups").onclick=()=>{$("tabGroups").classList.add("active");$("tabAll").classList.remove("active");renderList()};
-$("logout").onclick=()=>{localStorage.removeItem("axra_token");location.reload()};
-$("search").addEventListener("input",renderList);
-
-// CALLING LOGIC
-async function createPC(targetId){
- pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
- pc.onicecandidate=e=>{if(e.candidate) socket.emit("ice-candidate",{to:targetId,candidate:e.candidate})};
- pc.ontrack=e=>{$("remoteVideo").srcObject=e.streams[0]};
- pc.onconnectionstatechange=()=>{if(pc.connectionState==="failed"||pc.connectionState==="disconnected")endCallUI()};
- return pc;
+async function loadGlobal(){
+ currentChat={type:'global',id:null}; $('chatName').textContent='Global Chat'; $('chatStatus').textContent='Axra Global • Online'; $('headerAvatar').textContent='G';
+ renderList(); showChat(); try{ const data=await api('/api/messages/global'); renderMessages(data||[]); }catch{ renderMessages([]); }
 }
-async function startCall(isCaller, targetId, remoteOffer, type){
- $("callOverlay").style.display="flex";
- $("callStatus").textContent= type==="video"?"Video calling...":"Voice calling...";
- try{ localStream=await navigator.mediaDevices.getUserMedia({video:type==="video",audio:true}); }catch{alert("Need mic/cam permission");endCallUI();return;}
- $("localVideo").srcObject=localStream;
- $("remoteVideo").style.display= type==="video"?"block":"none";
- await createPC(targetId);
- localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
- if(isCaller){
-  const offer=await pc.createOffer(); await pc.setLocalDescription(offer);
-  socket.emit("call-user",{to:targetId,offer,type});
- }else{
-  await pc.setRemoteDescription(new RTCSessionDescription(remoteOffer));
-  const answer=await pc.createAnswer(); await pc.setLocalDescription(answer);
-  socket.emit("answer-call",{to:targetId,answer});
+function openPrivate(u){
+ const realId=u._id||u.id; if(!realId){ alert('User ID missing!'); return; }
+ currentChat={type:'private',id:realId, user:u}; $('chatName').textContent=u.name||u.username; $('chatStatus').textContent='@'+u.username; $('headerAvatar').textContent=(u.username||'U')[0].toUpperCase();
+ renderList(); showChat(); loadPrivate(realId);
+}
+function openGroup(g){
+ const realId=g._id||g.id; currentChat={type:'group',id:realId}; $('chatName').textContent=g.name; $('chatStatus').textContent=(g.members?.length||'')+' members'; $('headerAvatar').textContent=g.name[0].toUpperCase();
+ renderList(); showChat(); loadGroup(realId);
+}
+async function loadPrivate(id){ $('messages').innerHTML='<div style="color:#6b7280;text-align:center;margin-top:20px">Loading chat...</div>'; try{ const data=await api('/api/messages/private/'+id); renderMessages(data||[]); }catch{ renderMessages([]);} }
+async function loadGroup(id){ $('messages').innerHTML='<div style="color:#6b7280;text-align:center;margin-top:20px">Loading group...</div>'; try{ const data=await api('/api/messages/group/'+id); renderMessages(data||[]); }catch{ renderMessages([]);} }
+function renderMessages(msgs){
+ const box=$('messages'); box.innerHTML='';
+ if(!msgs||msgs.length===0){ box.innerHTML='<div style="color:#4b5563;text-align:center;margin-top:40px">No messages yet<br><span style="font-size:12px">Send a photo or say hi 👋</span></div>'; return; }
+ msgs.forEach(m=>{
+	const isMe = myUser && (m.sender===myUser._id || m.sender_id===myUser._id || m.sender_username===myUser.username || m.sender==myUser.username || m.sender==myUser._id);
+	const text=m.text||m.message||'';
+	const sender=m.sender_username||m.senderUsername||m.sender_name||'';
+	const img = m.image || m.imageUrl || '';
+	const div=document.createElement('div'); div.className='msg '+(isMe?'me':'other');
+	let html='';
+	if(currentChat.type!=='private' &&!isMe && sender) html+=`<div style="font-size:11px;color:#60a5fa;margin-bottom:4px;font-weight:700">${sender}</div>`;
+	if(text) html+=`<div style="white-space:pre-wrap">${escapeHtml(text)}</div>`;
+	if(img) html+=`<img src="${img}" class="chat-img" onclick="window.open(this.src,'_blank')" onerror="this.style.display='none'">`;
+	if(!img && text && text.includes('<img')) html=text;
+	html+=`<div class="msgTime">${new Date(m.createdAt||m.timestamp||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`;
+	div.innerHTML=html;
+	box.appendChild(div);
+ });
+ box.scrollTop=box.scrollHeight;
+}
+function escapeHtml(s){ if(s.includes('<img')) return s; return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function send(){
+ const input=$('msgInput'); const txt=input.value.trim(); if(!txt) return; input.value='';
+ const box=$('messages'); const temp=document.createElement('div'); temp.className='msg me'; temp.innerHTML=`${escapeHtml(txt)}<div class="msgTime">now</div>`; box.appendChild(temp); box.scrollTop=box.scrollHeight;
+ try{
+	if(currentChat.type==='global') await api('/api/messages/global',{method:'POST',body:JSON.stringify({text:txt})});
+	else if(currentChat.type==='private') await api('/api/messages/private/'+currentChat.id,{method:'POST',body:JSON.stringify({text:txt})});
+	else if(currentChat.type==='group') await api('/api/messages/group/'+currentChat.id,{method:'POST',body:JSON.stringify({text:txt})});
+ }catch(e){ console.error(e); }
+}
+$('fileInput').addEventListener('change', async (e)=>{
+	const file=e.target.files[0]; if(!file) return;
+	const isStory = confirm('Send as Story? Click Cancel to send as chat photo');
+	if(isStory){
+		const fd=new FormData(); fd.append('file',file);
+		try{
+			const res=await fetch('/api/upload',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:fd});
+			const data=await res.json();
+			if(data.url){
+				stories.unshift({username:myUser?.username||'You',image:data.url,createdAt:Date.now()});
+				try{ await api('/api/stories',{method:'POST',body:JSON.stringify({image:data.url})}); }catch{}
+				renderStories(); alert('Story posted! Will disappear in 24h');
+			}
+		}catch(err){ console.error(err); }
+	} else {
+		const reader=new FileReader();
+		reader.onload=ev=>{ $('previewImg').src=ev.target.result; $('previewName').textContent=file.name+' ('+Math.round(file.size/1024)+'KB)'; $('previewBar').style.display='flex'; };
+		reader.readAsDataURL(file);
+		const fd=new FormData(); fd.append('file',file);
+		try{
+			const res=await fetch('/api/upload',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:fd});
+			const data=await res.json();
+			if(data.url) pendingImageUrl=data.url; else { alert('Upload failed'); console.log(data); }
+		}catch(err){ console.error(err); alert('Upload error'); }
+	}
+	e.target.value='';
+});
+function cancelPreview(){ $('previewBar').style.display='none'; $('previewImg').src=''; pendingImageUrl=null; }
+async function sendImage(){
+	if(!pendingImageUrl) return; const url=pendingImageUrl;
+	const box=$('messages'); const div=document.createElement('div'); div.className='msg me'; div.innerHTML=`<img src="${url}" class="chat-img"><div class="msgTime">now</div>`; box.appendChild(div); box.scrollTop=box.scrollHeight;
+	cancelPreview();
+	try{
+		if(currentChat.type==='global') await api('/api/messages/global',{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
+		else if(currentChat.type==='private') await api('/api/messages/private/'+currentChat.id,{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
+		else if(currentChat.type==='group') await api('/api/messages/group/'+currentChat.id,{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
+	}catch(e){ console.error(e); }
+}
+function startCall(video){
+	if(!currentChat.id || currentChat.type==='global'){ alert('Select a private chat to call'); return; }
+	$('callModal').style.display='flex';
+	$('callAvatar').textContent=($('chatName').textContent||'U')[0].toUpperCase();
+	$('callName').textContent=$('chatName').textContent;
+	$('callStatus').textContent=video?'Video calling...':'Calling...';
+	if(socket) socket.emit('call-user',{to:currentChat.id,from:myUser,video});
+}
+function endCall(){ $('callModal').style.display='none'; if(socket) socket.emit('end-call',{to:currentChat.id}); }
+function acceptCall(){ $('callModal').style.display='none'; if(socket) socket.emit('accept-call',{to:currentChat.id}); }
+function showChatInfo(){ alert('Axra Chat\nUser: '+$('chatName').textContent+'\nID: '+currentChat.id); }
+function newGroup(){ const name=prompt('Group name?'); if(!name) return; api('/api/groups',{method:'POST',body:JSON.stringify({name})}).then(()=>location.reload()); }
+function openStory(u,isReal){
+	const img=isReal?u.image:null;
+	$('storyModal').style.display='flex';
+	$('storyUser').textContent=u.username||u.name||'User';
+	$('storyAvatar').textContent=(u.username||'U')[0].toUpperCase();
+	if(img) $('storyContent').innerHTML=`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`;
+	else $('storyContent').innerHTML=`<div style="text-align:center"><div class="avatar" style="width:80px;height:80px;margin:0 auto 16px;font-size:30px">${(u.username||'U')[0].toUpperCase()}</div><div style="font-size:18px;font-weight:700">${u.username}</div><div style="color:#9ca3af;margin-top:8px">No stories yet</div></div>`;
+	const prog=$('storyProgress'); prog.innerHTML='<div class="prog"><div class="progFill" style="width:100%"></div></div>';
+}
+function closeStory(){ $('storyModal').style.display='none'; }
+$('msgInput').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
+(async()=>{
+ if(!token){
+	let username=prompt('Enter username to login (e.g. Timm)'); if(!username) return;
+	try{ let r=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username})}); if(r.token){ token=r.token; localStorage.setItem('token',token); localStorage.setItem('user',JSON.stringify(r.user)); myUser=r.user; } else throw r; }catch{ alert('Login failed, try register'); return; }
  }
-}
-$("voiceCallBtn").onclick=()=>{if(currentChat.type!=="private")return alert("Call only in private chat"); currentCallTo=currentChat.id; startCall(true,currentChat.id,null,"voice");};
-$("videoCallBtn").onclick=()=>{if(currentChat.type!=="private")return alert("Video call only in private chat"); currentCallTo=currentChat.id; startCall(true,currentChat.id,null,"video");};
-$("endCallBtn").onclick=()=>{ if(currentCallTo) socket.emit("end-call",{to:currentCallTo}); endCallUI(); };
-function endCallUI(){ if(pc){pc.close();pc=null;} if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;} $("callOverlay").style.display="none"; $("remoteVideo").srcObject=null; $("localVideo").srcObject=null; currentCallTo=null; }
-$("muteBtn").onclick=()=>{ if(!localStream)return; const a=localStream.getAudioTracks()[0]; if(a){a.enabled=!a.enabled; $("muteBtn").textContent=a.enabled?"🎤":"🔇"} };
-
-if(token)afterAuth();
-</script></body></html>
+ try{ const users=await api('/api/users'); allUsers=(users||[]).filter(u=>!myUser|| (u._id||u.id)!==(myUser._id||myUser.id)); }catch{}
+ try{ const g=await api('/api/groups'); groups=g||[]; }catch{}
+ try{ const s=await api('/api/stories'); stories=s||[]; }catch{}
+ renderStories(); renderList(); loadGlobal();
+ try{
+	 const scr=document.createElement('script'); scr.src='/socket.io/socket.io.js';
+	 scr.onload=()=>{
+		 socket=io(); window.socket=socket;
+		 socket.on('newMessage',()=>{ if(currentChat.type==='global') loadGlobal(); else if(currentChat.type==='private') loadPrivate(currentChat.id); else if(currentChat.type==='group') loadGroup(currentChat.id); });
+		 socket.on('incoming-call',(data)=>{ $('callModal').style.display='flex'; $('callName').textContent=data.from?.username||'Someone'; $('callStatus').textContent=(data.video?'Video':'Voice')+' call incoming...'; $('acceptBtn').style.display='block'; currentChat={type:'private',id:data.from._id||data.from.id}; });
+		 socket.on('call-ended',()=>{ $('callModal').style.display='none'; });
+	 };
+	 document.body.appendChild(scr);
+ }catch{}
+})();
+</script>
+</body>
+</html>
