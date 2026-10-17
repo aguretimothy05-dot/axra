@@ -1,265 +1,630 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Axra - Chat, Call, Photos &amp; Stories</title>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#2563eb">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{display:flex;height:100vh;background:#0a0e1a;color:#fff;font-family:system-ui,-apple-system;overflow:hidden}
-#sidebar{width:360px;background:#111827;border-right:1px solid #1f2937;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
-#sidebarHeader{padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center}
-#logo{font-weight:900;font-size:22px;letter-spacing:-0.5px}
-#logo span{color:#3b82f6}
-#storiesBar{display:flex;gap:12px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid #1f2937}
-#storiesBar::-webkit-scrollbar{display:none}
-.storyItem{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0}
-.storyRing{width:60px;height:60px;border-radius:50%;padding:3px;background:linear-gradient(45deg,#3b82f6,#8b5cf6,#ec4899)}
-.storyRing.seen{background:#374151}
-.storyAvatar{width:100%;height:100%;border-radius:50%;background:#1f2937;display:flex;align-items:center;justify-content:center;font-weight:800;border:3px solid #111827;background-size:cover;background-position:center}
-.storyName{font-size:11px;color:#9ca3af;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#chatList{flex:1;overflow-y:auto}
-.chatItem{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-left:3px solid transparent;transition:0.15s}
-.chatItem:hover{background:#1f2937}
-.chatItem.active{background:#1e293b;border-left-color:#3b82f6}
-.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
-.chatInfo{flex:1;min-width:0}
-.chatTop{display:flex;justify-content:space-between}
-.name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.time{font-size:11px;color:#6b7280}
-.last{font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-#chatPane{flex:1;display:flex;flex-direction:column;background:#0f172a;min-width:0}
-#chatHeader{padding:12px 16px;border-bottom:1px solid #1f2937;display:flex;align-items:center;gap:12px;background:#111827}
-#backBtn{display:none;cursor:pointer;padding:8px 12px;background:#1f2937;border-radius:8px;font-weight:600}
-#headerInfo{flex:1;min-width:0}
-#chatName{font-weight:700;font-size:16px}
-#chatStatus{font-size:12px;color:#6b7280}
-.headerBtn{width:38px;height:38px;border-radius:50%;background:#1f2937;border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.headerBtn:hover{background:#374151}
-#messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#0a0e1a}
-.msg{max-width:72%;padding:10px 14px;border-radius:18px;background:#1f2937;line-height:1.4;font-size:14px;word-break:break-word;position:relative}
-.msg.me{align-self:flex-end;background:#2563eb;border-bottom-right-radius:6px}
-.msg.other{border-bottom-left-radius:6px}
-.msg img.chat-img{max-width:100%;max-height:300px;border-radius:12px;display:block;margin-top:8px;cursor:pointer}
-.msg .msgTime{font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px;text-align:right}
-#previewBar{display:none;padding:10px 14px;background:#111827;border-top:1px solid #1f2937;align-items:center;gap:10px}
-#previewBar img{max-height:70px;border-radius:8px}
-#inputArea{display:flex;gap:8px;padding:12px 14px;border-top:1px solid #1f2937;background:#111827;align-items:center}
-#msgInput{flex:1;padding:12px 16px;border-radius:24px;border:1px solid #374151;background:#1f2937;color:#fff;outline:none;font-size:14px}
-#msgInput:focus{border-color:#3b82f6}
-.iconBtn{width:42px;height:42px;border-radius:50%;border:none;background:#1f2937;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.iconBtn:hover{background:#374151}
-.sendBtn{padding:10px 20px;border-radius:24px;border:none;background:#2563eb;color:#fff;font-weight:700;cursor:pointer}
-.sendBtn:hover{background:#1d4ed8}
-#callModal,#storyModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:100;align-items:center;justify-content:center;flex-direction:column}
-.callCard{background:#111827;padding:32px;border-radius:24px;text-align:center;min-width:320px;border:1px solid #1f2937}
-.callAvatar{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:800}
-.callActions{display:flex;gap:16px;justify-content:center;margin-top:24px}
-.callBtn{width:60px;height:60px;border-radius:50%;border:none;font-size:24px;cursor:pointer}
-.callBtn.end{background:#ef4444;color:#fff}
-.callBtn.accept{background:#22c55e;color:#fff}
-.storyView{position:relative;width:100%;max-width:400px;height:90vh;background:#000;border-radius:16px;overflow:hidden}
-.storyProgress{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:4px;z-index:2}
-.prog{height:3px;background:rgba(255,255,255,0.3);flex:1;border-radius:2px;overflow:hidden}
-.progFill{height:100%;background:#fff;width:0%;transition:width 0.1s}
-.storyContent{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-.storyContent img{max-width:100%;max-height:100%;object-fit:contain}
-.storyTop{position:absolute;top:20px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:2}
-@media(max-width:768px){#sidebar{position:absolute;inset:0;width:100%;z-index:10}#sidebar.hidden{transform:translateX(-100%)}#backBtn{display:flex}#chatPane{width:100%}.msg{max-width:85%}}
-</style>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>AXRACONNECT</title>
 </head>
 <body>
-<div id="sidebar">
-<div id="sidebarHeader"><div id="logo">Axra<span>.</span></div><div style="display:flex;gap:8px"><button class="iconBtn" onclick="newGroup()" title="New Group">＋</button></div></div>
-<div id="storiesBar"></div>
-<div id="chatList"></div>
-</div>
-<div id="chatPane">
-<div id="chatHeader">
-<span id="backBtn" onclick="showList()">←</span>
-<div class="avatar" id="headerAvatar">G</div>
-<div id="headerInfo"><div id="chatName">Global Chat</div><div id="chatStatus">Axra Global • Online</div></div>
-<button class="headerBtn" onclick="startCall(false)" title="Voice call">📞</button>
-<button class="headerBtn" onclick="startCall(true)" title="Video call">🎥</button>
-<button class="headerBtn" onclick="showChatInfo()" title="Info">⋯</button>
-</div>
-<div id="messages"></div>
-<div id="previewBar"><img id="previewImg"><div style="flex:1"><div id="previewName" style="font-size:12px;color:#9ca3af"></div><div style="font-size:11px;color:#6b7280">Ready to send</div></div><button class="iconBtn" onclick="cancelPreview()">✕</button><button class="sendBtn" onclick="sendImage()">Send</button></div>
-<div id="inputArea">
-<button class="iconBtn" onclick="document.getElementById('fileInput').click()" title="Photo">📎</button>
-<input type="file" id="fileInput" accept="image/*,video/*" hidden>
-<input id="msgInput" placeholder="Type a message...">
-<button class="sendBtn" onclick="send()">Send</button>
-</div>
-</div>
-<div id="callModal"><div class="callCard"><div class="callAvatar" id="callAvatar">D</div><div id="callName" style="font-size:20px;font-weight:700">David</div><div id="callStatus" style="color:#9ca3af;margin-top:8px">Calling...</div><div class="callActions"><button class="callBtn end" onclick="endCall()">✕</button><button class="callBtn accept" id="acceptBtn" onclick="acceptCall()" style="display:none">✓</button></div></div></div>
-<div id="storyModal" onclick="closeStory()"><div class="storyView" onclick="event.stopPropagation()"><div class="storyProgress" id="storyProgress"></div><div class="storyTop"><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:32px;height:32px" id="storyAvatar">U</div><div id="storyUser" style="font-weight:600">User</div></div><button class="iconBtn" onclick="closeStory()">✕</button></div><div class="storyContent" id="storyContent"></div></div></div>
-<script>
-const $=id=>document.getElementById(id);
-let allUsers=[],groups=[],stories=[],currentChat={type:"global",id:null};
-let token=localStorage.getItem('token');
-let myUser=JSON.parse(localStorage.getItem('user')||'null');
-let pendingImageUrl=null;
-let socket=null;
-async function api(p,opts={}){
- opts.headers={...(opts.headers||{}),'Content-Type':'application/json'};
- if(token) opts.headers['Authorization']='Bearer '+token;
- let r=await fetch(p,opts);
- let j=await r.json().catch(()=>({}));
- if(!r.ok) throw j;
- return j;
+	<script>
+"use strict";
+
+// =====================================
+// AXRACONNECT - MAIN JAVASCRIPT
+// =====================================
+
+const API = "/api";
+
+let currentUser = null;
+let selectedUser = null;
+let socket = null;
+let posts = [];
+let users = [];
+
+// Get HTML elements safely
+const $ = (selector) => document.querySelector(selector);
+
+function showMessage(message, type = "error") {
+	const element =
+		$("#messageStatus") ||
+		$("#error") ||
+		$("#statusMessage");
+
+	if (element) {
+		element.textContent = message;
+		element.style.color =
+			type === "success" ? "#25c58a" : "#ff6b75";
+	} else {
+		alert(message);
+	}
 }
-function showList(){ $('sidebar').classList.remove('hidden'); if(window.innerWidth<=768){ $('sidebar').style.display='flex'; $('chatPane').style.display='none'; } else { $('sidebar').style.display='flex'; $('chatPane').style.display='flex'; } }
-function showChat(){ $('sidebar').classList.add('hidden'); if(window.innerWidth<=768){ $('sidebar').style.display='none'; $('chatPane').style.display='flex'; } else { $('sidebar').style.display='flex'; $('chatPane').style.display='flex'; } setTimeout(()=>{ $('sidebar').classList.remove('hidden'); if(window.innerWidth<=768) $('sidebar').style.display='none'; },10); }
-function renderStories(){
- const bar=$('storiesBar'); bar.innerHTML='';
- const add=document.createElement('div'); add.className='storyItem'; add.innerHTML=`<div class="storyRing" style="background:#1f2937"><div class="storyAvatar">＋</div></div><div class="storyName">Your Story</div>`;
- add.onclick=()=>document.getElementById('fileInput').click();
- bar.appendChild(add);
- (allUsers.slice(0,8)).forEach(u=>{
-  const el=document.createElement('div'); el.className='storyItem';
-  el.innerHTML=`<div class="storyRing"><div class="storyAvatar">${(u.username||'U')[0].toUpperCase()}</div></div><div class="storyName">${u.username}</div>`;
-  el.onclick=()=>openStory(u);
-  bar.appendChild(el);
- });
- stories.forEach(s=>{
-  const el=document.createElement('div'); el.className='storyItem';
-  el.innerHTML=`<div class="storyRing"><div class="storyAvatar" style="background-image:url('${s.image}')"></div></div><div class="storyName">${s.username}</div>`;
-  el.onclick=()=>openStory(s,true);
-  bar.appendChild(el);
- });
+
+// =====================================
+// API REQUEST HELPER
+// =====================================
+
+async function apiRequest(path, options = {}) {
+	const response = await fetch(`${API}${path}`, {
+		...options,
+		credentials: "same-origin",
+		headers: {
+			"Content-Type": "application/json",
+			...(options.headers || {})
+		}
+	});
+
+	const data = await response.json().catch(() => ({}));
+
+	if (!response.ok) {
+		throw new Error(
+			data.message ||
+			data.error ||
+			`Request failed: ${response.status}`
+		);
+	}
+
+	return data;
 }
-function renderList(q=''){
- const list=$('chatList'); list.innerHTML='';
- let items=[]; items.push({username:'Global',name:'Global Chat',isGlobal:true,time:'now',last:'Axra Global chat'});
- items=items.concat(allUsers.map(u=>({...u,name:u.name||u.username,last:'@'+u.username,time:''})));
- items=items.concat(groups.map(g=>({...g,isGroup:true,name:g.name,last:'Group • '+g.members?.length+' members',time:''})));
- const filter=(q||'').toLowerCase();
- items.filter(u=>!q|| (u.name||'').toLowerCase().includes(filter) || (u.username||'').toLowerCase().includes(filter)).forEach(u=>{
-  const el=document.createElement('div');
-  const isActive = (u.isGlobal && currentChat.type==='global') || (!u.isGlobal &&!u.isGroup && currentChat.id === (u._id||u.id)) || (u.isGroup && currentChat.id === (u._id||u.id));
-  el.className='chatItem'+(isActive?' active':'');
-  const initial=(u.username||u.name||'G')[0].toUpperCase();
-  el.innerHTML=`<div class="avatar">${initial}</div><div class="chatInfo"><div class="chatTop"><div class="name">${u.isGlobal?'Global Chat':(u.name||u.username)}</div><div class="time">${u.time||''}</div></div><div class="last">${u.last||''}</div></div>`;
-  el.onclick=()=>{ if(u.isGlobal) loadGlobal(); else if(u.isGroup) openGroup(u); else openPrivate(u); };
-  list.appendChild(el);
- });
+
+// =====================================
+// AUTHENTICATION: TAB SWITCHING
+// =====================================
+
+function showLogin() {
+	const loginForm = $("#loginForm");
+	const registerForm = $("#registerForm");
+
+	if (loginForm) loginForm.style.display = "block";
+	if (registerForm) registerForm.style.display = "none";
+
+	$("#loginTab")?.classList.add("active");
+	$("#registerTab")?.classList.remove("active");
+
+	showMessage("");
 }
-async function loadGlobal(){
- currentChat={type:'global',id:null}; $('chatName').textContent='Global Chat'; $('chatStatus').textContent='Axra Global • Online'; $('headerAvatar').textContent='G';
- renderList(); showChat(); try{ const data=await api('/api/messages/global'); renderMessages(data||[]); }catch{ renderMessages([]); }
+
+function showRegister() {
+	const loginForm = $("#loginForm");
+	const registerForm = $("#registerForm");
+
+	if (loginForm) loginForm.style.display = "none";
+	if (registerForm) registerForm.style.display = "block";
+
+	$("#registerTab")?.classList.add("active");
+	$("#loginTab")?.classList.remove("active");
+
+	showMessage("");
 }
-function openPrivate(u){
- const realId=u._id||u.id; if(!realId){ alert('User ID missing!'); return; }
- currentChat={type:'private',id:realId,user:u}; $('chatName').textContent=u.name||u.username; $('chatStatus').textContent='@'+u.username; $('headerAvatar').textContent=(u.username||'U')[0].toUpperCase();
- renderList(); showChat(); loadPrivate(realId);
-}
-function openGroup(g){
- const realId=g._id||g.id; currentChat={type:'group',id:realId}; $('chatName').textContent=g.name; $('chatStatus').textContent=(g.members?.length||'')+' members'; $('headerAvatar').textContent=g.name[0].toUpperCase();
- renderList(); showChat(); loadGroup(realId);
-}
-async function loadPrivate(id){ $('messages').innerHTML='<div style="color:#6b7280;text-align:center;margin-top:20px">Loading chat...</div>'; try{ const data=await api('/api/messages/private/'+id); renderMessages(data||[]); }catch{ renderMessages([]);} }
-async function loadGroup(id){ $('messages').innerHTML='<div style="color:#6b7280;text-align:center;margin-top:20px">Loading group...</div>'; try{ const data=await api('/api/messages/group/'+id); renderMessages(data||[]); }catch{ renderMessages([]);} }
-function renderMessages(msgs){
- const box=$('messages'); box.innerHTML='';
- if(!msgs||msgs.length===0){ box.innerHTML='<div style="color:#4b5563;text-align:center;margin-top:40px">No messages yet<br><span style="font-size:12px">Send a photo or say hi 👋</span></div>'; return; }
- msgs.forEach(m=>{
-  const isMe=myUser&&(m.sender===myUser._id||m.sender_id===myUser._id||m.sender_username===myUser.username||m.sender==myUser.username||m.sender==myUser._id);
-  const text=m.text||m.message||'';
-  const sender=m.sender_username||m.senderUsername||m.sender_name||'';
-  const img=m.image||m.imageUrl||'';
-  const div=document.createElement('div'); div.className='msg '+(isMe?'me':'other');
-  let html='';
-  if(currentChat.type!=='private'&&!isMe&&sender) html+=`<div style="font-size:11px;color:#60a5fa;margin-bottom:4px;font-weight:700">${sender}</div>`;
-  if(text) html+=`<div style="white-space:pre-wrap">${escapeHtml(text)}</div>`;
-  if(img) html+=`<img src="${img}" class="chat-img" onclick="window.open(this.src,'_blank')" onerror="this.style.display='none'">`;
-  if(!img&&text&&text.includes('<img')) html=text;
-  html+=`<div class="msgTime">${new Date(m.createdAt||m.timestamp||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`;
-  div.innerHTML=html; box.appendChild(div);
- });
- box.scrollTop=box.scrollHeight;
-}
-function escapeHtml(s){ if(s.includes('<img')) return s; return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-async function send(){
- const input=$('msgInput'); const txt=input.value.trim(); if(!txt) return; input.value='';
- const box=$('messages'); const temp=document.createElement('div'); temp.className='msg me'; temp.innerHTML=`${escapeHtml(txt)}<div class="msgTime">now</div>`; box.appendChild(temp); box.scrollTop=box.scrollHeight;
- try{
-  if(currentChat.type==='global') await api('/api/messages/global',{method:'POST',body:JSON.stringify({text:txt})});
-  else if(currentChat.type==='private') await api('/api/messages/private/'+currentChat.id,{method:'POST',body:JSON.stringify({text:txt})});
-  else if(currentChat.type==='group') await api('/api/messages/group/'+currentChat.id,{method:'POST',body:JSON.stringify({text:txt})});
- }catch(e){ console.error(e); }
-}
-$('fileInput').addEventListener('change',async e=>{
- const file=e.target.files[0]; if(!file) return;
- const isStory=confirm('Send as Story? Click Cancel to send as chat photo');
- if(isStory){
-  const fd=new FormData(); fd.append('file',file);
-  try{ const res=await fetch('/api/upload',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:fd}); const data=await res.json();
-   if(data.url){ stories.unshift({username:myUser?.username||'You',image:data.url,createdAt:Date.now()}); try{await api('/api/stories',{method:'POST',body:JSON.stringify({image:data.url})});}catch{} renderStories(); alert('Story posted! Will disappear in 24h'); }
-  }catch(err){console.error(err);}
- }else{
-  const reader=new FileReader(); reader.onload=ev=>{$('previewImg').src=ev.target.result;$('previewName').textContent=file.name+' ('+Math.round(file.size/1024)+'KB)';$('previewBar').style.display='flex';}; reader.readAsDataURL(file);
-  const fd=new FormData(); fd.append('file',file);
-  try{const res=await fetch('/api/upload',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:fd});const data=await res.json();if(data.url)pendingImageUrl=data.url;else{alert('Upload failed');console.log(data);}}
-  catch(err){console.error(err);alert('Upload error');}
- }
- e.target.value='';
+
+// =====================================
+// REGISTER ACCOUNT
+// HTML form ID: registerForm
+// =====================================
+
+$("#registerTab")?.addEventListener("click", showRegister);
+$("#loginTab")?.addEventListener("click", showLogin);
+
+$("#registerForm")?.addEventListener("submit", async (event) => {
+	event.preventDefault();
+
+	const form = event.currentTarget;
+	const button = form.querySelector('button[type="submit"]') ||
+								 form.querySelector("button");
+
+	const values = new FormData(form);
+
+	const account = {
+		name: String(values.get("name") || "").trim(),
+		username: String(values.get("username") || "")
+			.trim()
+			.replace(/^@/, ""),
+		email: String(values.get("email") || "").trim().toLowerCase(),
+		country: String(values.get("country") || "").trim(),
+		password: String(values.get("password") || ""),
+		inviteCode: String(values.get("inviteCode") || "").trim()
+	};
+
+	if (
+		!account.name ||
+		!account.username ||
+		!account.email ||
+		!account.country ||
+		!account.password ||
+		!account.inviteCode
+	) {
+		showMessage("Please complete every field.");
+		return;
+	}
+
+	if (account.password.length < 10) {
+		showMessage("Your password must contain at least 10 characters.");
+		return;
+	}
+
+	try {
+		if (button) {
+			button.disabled = true;
+			button.textContent = "Creating account...";
+		}
+
+		const result = await apiRequest("/register", {
+			method: "POST",
+			body: JSON.stringify(account)
+		});
+
+		showMessage(
+			result.message || "Account created successfully!",
+			"success"
+		);
+
+		if (result.user) {
+			currentUser = result.user;
+			await openApplication();
+		} else {
+			showLogin();
+			showMessage(
+				"Account created. Please sign in.",
+				"success"
+			);
+		}
+	} catch (error) {
+		console.error("Registration error:", error);
+		showMessage(error.message || "Registration failed.");
+	} finally {
+		if (button) {
+			button.disabled = false;
+			button.textContent = "Create Account";
+		}
+	}
 });
-function cancelPreview(){ $('previewBar').style.display='none'; $('previewImg').src=''; pendingImageUrl=null; }
-async function sendImage(){
- if(!pendingImageUrl)return; const url=pendingImageUrl;
- const box=$('messages'); const div=document.createElement('div'); div.className='msg me'; div.innerHTML=`<img src="${url}" class="chat-img"><div class="msgTime">now</div>`; box.appendChild(div); box.scrollTop=box.scrollHeight;
- cancelPreview();
- try{
-  if(currentChat.type==='global') await api('/api/messages/global',{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
-  else if(currentChat.type==='private') await api('/api/messages/private/'+currentChat.id,{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
-  else if(currentChat.type==='group') await api('/api/messages/group/'+currentChat.id,{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
- }catch(e){console.error(e);}
+
+// =====================================
+// LOGIN
+// HTML form ID: loginForm
+// =====================================
+
+$("#loginForm")?.addEventListener("submit", async (event) => {
+	event.preventDefault();
+
+	const form = event.currentTarget;
+	const button = form.querySelector('button[type="submit"]') ||
+								 form.querySelector("button");
+
+	const values = new FormData(form);
+
+	const credentials = {
+		email: String(values.get("email") || "").trim().toLowerCase(),
+		password: String(values.get("password") || "")
+	};
+
+	if (!credentials.email || !credentials.password) {
+		showMessage("Enter your email and password.");
+		return;
+	}
+
+	try {
+		if (button) {
+			button.disabled = true;
+			button.textContent = "Signing in...";
+		}
+
+		const result = await apiRequest("/login", {
+			method: "POST",
+			body: JSON.stringify(credentials)
+		});
+
+		currentUser = result.user || null;
+
+		await openApplication();
+		showMessage("Welcome back!", "success");
+	} catch (error) {
+		console.error("Login error:", error);
+		showMessage(error.message || "Unable to sign in.");
+	} finally {
+		if (button) {
+			button.disabled = false;
+			button.textContent = "Sign In";
+		}
+	}
+});
+
+// =====================================
+// OPEN THE MAIN APP
+// =====================================
+
+async function openApplication() {
+	const auth = $("#auth");
+	const app = $("#app");
+
+	if (auth) auth.style.display = "none";
+	if (app) app.style.display = "flex";
+
+	if (currentUser) {
+		const profile = $("#profile");
+
+		if (profile) {
+			profile.textContent =
+				currentUser.name || currentUser.username || "My profile";
+		}
+	}
+
+	await loadUsers();
+	await loadPosts();
+
+	connectSocket();
 }
-function startCall(video){
- if(!currentChat.id||currentChat.type==='global'){alert('Select a private chat to call');return;}
- $('callModal').style.display='flex'; $('callAvatar').textContent=($('chatName').textContent||'U')[0].toUpperCase(); $('callName').textContent=$('chatName').textContent; $('callStatus').textContent=video?'Video calling...':'Calling...';
- if(socket)socket.emit('call-user',{to:currentChat.id,from:myUser,video});
+
+// =====================================
+// CHECK EXISTING SESSION
+// =====================================
+
+async function checkSession() {
+	try {
+		const result = await apiRequest("/me");
+
+		currentUser = result.user || null;
+
+		if (currentUser) {
+			await openApplication();
+		} else {
+			showLogin();
+		}
+	} catch (error) {
+		console.log("No active session:", error.message);
+		showLogin();
+	}
 }
-function endCall(){ $('callModal').style.display='none'; if(socket)socket.emit('end-call',{to:currentChat.id}); }
-function acceptCall(){ $('callModal').style.display='none'; if(socket)socket.emit('accept-call',{to:currentChat.id}); }
-function showChatInfo(){ alert('Axra Chat\nUser: '+$('chatName').textContent+'\nID: '+currentChat.id); }
-function newGroup(){const name=prompt('Group name?');if(!name)return;api('/api/groups',{method:'POST',body:JSON.stringify({name})}).then(()=>location.reload());}
-function openStory(u,isReal){
- const img=isReal?u.image:null; $('storyModal').style.display='flex'; $('storyUser').textContent=u.username||u.name||'User'; $('storyAvatar').textContent=(u.username||'U')[0].toUpperCase();
- if(img)$('storyContent').innerHTML=`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`;
- else $('storyContent').innerHTML=`<div style="text-align:center"><div class="avatar" style="width:80px;height:80px;margin:0 auto 16px;font-size:30px">${(u.username||'U')[0].toUpperCase()}</div><div style="font-size:18px;font-weight:700">${u.username}</div><div style="color:#9ca3af;margin-top:8px">No stories yet</div></div>`;
- $('storyProgress').innerHTML='<div class="prog"><div class="progFill" style="width:100%"></div></div>';
+
+// =====================================
+// LOGOUT
+// =====================================
+
+$("#logout")?.addEventListener("click", async () => {
+	try {
+		await apiRequest("/logout", { method: "POST" });
+	} catch (error) {
+		console.error("Logout error:", error);
+	}
+
+	if (socket) socket.disconnect();
+
+	currentUser = null;
+	selectedUser = null;
+
+	const app = $("#app");
+	const auth = $("#auth");
+
+	if (app) app.style.display = "none";
+	if (auth) auth.style.display = "flex";
+
+	showLogin();
+});
+
+// =====================================
+// SEARCH USERS
+// Requires GET /api/users?q=
+// =====================================
+
+async function loadUsers(search = "") {
+	const list = $("#peopleList");
+	if (!list) return;
+
+	list.innerHTML = "<p>Loading people...</p>";
+
+	try {
+		const result = await apiRequest(
+			`/users?q=${encodeURIComponent(search)}`
+		);
+
+		users = Array.isArray(result)
+			? result
+			: result.users || [];
+
+		list.replaceChildren();
+
+		if (users.length === 0) {
+			list.textContent = "No people found.";
+			return;
+		}
+
+		users.forEach((user) => {
+			if (currentUser && user.id === currentUser.id) return;
+
+			const button = document.createElement("button");
+			button.className = "person";
+			button.type = "button";
+
+			const name = document.createElement("strong");
+			name.textContent = user.name || user.username || "Member";
+
+			const country = document.createElement("span");
+			country.textContent = user.country || "";
+
+			button.append(name, country);
+
+			button.addEventListener("click", () => openChat(user));
+			list.appendChild(button);
+		});
+	} catch (error) {
+		console.error("User search error:", error);
+		list.textContent = `Could not load users: ${error.message}`;
+	}
 }
-function closeStory(){ $('storyModal').style.display='none'; }
-$('msgInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
-(async()=>{
- if(!token){let username=prompt('Enter username to login (e.g. Timm)');if(!username)return;
-  try{let r=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username})});if(r.token){token=r.token;localStorage.setItem('token',token);localStorage.setItem('user',JSON.stringify(r.user));myUser=r.user;}else throw r;}
-  catch{alert('Login failed, try register');return;}
- }
- try{const users=await api('/api/users');allUsers=(users||[]).filter(u=>!myUser||(u._id||u.id)!==(myUser._id||myUser.id));}catch{}
- try{const g=await api('/api/groups');groups=g||[];}catch{}
- try{const s=await api('/api/stories');stories=s||[];}catch{}
- renderStories();renderList();loadGlobal();
- try{const scr=document.createElement('script');scr.src='/socket.io/socket.io.js';scr.onload=()=>{
-  socket=io();window.socket=socket;
-  socket.on('newMessage',()=>{if(currentChat.type==='global')loadGlobal();else if(currentChat.type==='private')loadPrivate(currentChat.id);else if(currentChat.type==='group')loadGroup(currentChat.id);});
-  socket.on('incoming-call',data=>{$('callModal').style.display='flex';$('callName').textContent=data.from?.username||'Someone';$('callStatus').textContent=(data.video?'Video':'Voice')+' call incoming...';$('acceptBtn').style.display='block';currentChat={type:'private',id:data.from._id||data.from.id};});
-  socket.on('call-ended',()=>{$('callModal').style.display='none';});
- };document.body.appendChild(scr);}catch{}
-})();
-</script>
-<script>
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(reg=>console.log('Axra App installed:',reg.scope)).catch(err=>console.log('SW failed:',err));});}
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;console.log('Ready to install Axra app');});
-</script>
+
+$("#search")?.addEventListener("input", (event) => {
+	loadUsers(event.target.value.trim());
+});
+
+// =====================================
+// REAL-TIME CHAT
+// Requires Socket.IO on the server
+// =====================================
+
+function connectSocket() {
+	if (typeof io !== "function") {
+		console.warn("Socket.IO client was not loaded.");
+		return;
+	}
+
+	if (socket) socket.disconnect();
+
+	socket = io({ withCredentials: true });
+
+	socket.on("connect", () => {
+		console.log("Connected to chat server.");
+	});
+
+	socket.on("connect_error", (error) => {
+		console.error("Chat connection error:", error.message);
+	});
+
+	socket.on("private_message", (message) => {
+		if (
+			selectedUser &&
+			(
+				String(message.senderId) === String(selectedUser.id) ||
+				String(message.receiverId) === String(selectedUser.id)
+			)
+		) {
+			displayMessage(message);
+		}
+	});
+
+	socket.on("user_online", (userId) => {
+		console.log("User online:", userId);
+	});
+
+	socket.on("user_offline", (userId) => {
+		console.log("User offline:", userId);
+	});
+}
+
+// =====================================
+// OPEN PRIVATE CHAT
+// Requires GET /api/messages/:userId
+// =====================================
+
+async function openChat(user) {
+	selectedUser = user;
+
+	const header = $("#chatHeader");
+	const input = $("#messageInput");
+	const sendButton = $("#send");
+	const messages = $("#messages");
+
+	if (header) {
+		header.textContent =
+			user.name || user.username || "Private chat";
+	}
+
+	if (input) input.disabled = false;
+	if (sendButton) sendButton.disabled = false;
+
+	if (messages) messages.replaceChildren();
+
+	try {
+		const result = await apiRequest(
+			`/messages/${encodeURIComponent(user.id)}`
+		);
+
+		const history = Array.isArray(result)
+			? result
+			: result.messages || [];
+
+		history.forEach(displayMessage);
+	} catch (error) {
+		console.error("Message history error:", error);
+
+		if (messages) {
+			messages.textContent =
+				`Could not load chat history: ${error.message}`;
+		}
+	}
+
+	input?.focus();
+}
+
+// =====================================
+// DISPLAY MESSAGE SAFELY
+// =====================================
+
+function displayMessage(message) {
+	const container = $("#messages");
+	if (!container) return;
+
+	const bubble = document.createElement("div");
+
+	const mine =
+		currentUser &&
+		String(message.senderId ?? message.sender_id) ===
+			String(currentUser.id);
+
+	bubble.className = mine ? "message mine" : "message";
+
+	const text = document.createElement("p");
+	text.textContent =
+		message.text || message.content || message.message || "";
+
+	bubble.appendChild(text);
+	container.appendChild(bubble);
+	container.scrollTop = container.scrollHeight;
+}
+
+// =====================================
+// SEND PRIVATE MESSAGE
+// =====================================
+
+$("#messageForm")?.addEventListener("submit", (event) => {
+	event.preventDefault();
+
+	const input = $("#messageInput");
+	const text = input?.value.trim();
+
+	if (!text || !selectedUser) {
+		showMessage("Choose a person and enter a message.");
+		return;
+	}
+
+	if (!socket || !socket.connected) {
+		showMessage("Chat server is disconnected. Refresh and try again.");
+		return;
+	}
+
+	socket.emit("private_message", {
+		receiverId: selectedUser.id,
+		text
+	});
+
+	input.value = "";
+	input.focus();
+});
+
+// =====================================
+// SOCIAL POSTS / FEED
+// Requires GET /api/posts
+// =====================================
+
+async function loadPosts() {
+	const feed = $("#feed");
+	if (!feed) return;
+
+	feed.innerHTML = "<p>Loading posts...</p>";
+
+	try {
+		const result = await apiRequest("/posts");
+
+		posts = Array.isArray(result)
+			? result
+			: result.posts || [];
+
+		renderPosts();
+	} catch (error) {
+		console.warn("Posts endpoint unavailable:", error.message);
+		feed.textContent =
+			"The posts feed needs a GET /api/posts endpoint in server.js.";
+	}
+}
+
+function renderPosts() {
+	const feed = $("#feed");
+	if (!feed) return;
+
+	feed.replaceChildren();
+
+	posts.forEach((post) => {
+		const card = document.createElement("article");
+		card.className = "post";
+
+		const author = document.createElement("h3");
+		author.textContent =
+			post.name || post.username || "AxraConnect member";
+
+		const content = document.createElement("p");
+		content.textContent = post.content || post.text || "";
+
+		const actions = document.createElement("div");
+		actions.className = "post-actions";
+
+		const likeButton = document.createElement("button");
+		likeButton.type = "button";
+		likeButton.textContent =
+			`❤️ Like (${Number(post.likesCount || post.likes || 0)})`;
+
+		likeButton.addEventListener("click", async () => {
+			try {
+				await apiRequest(`/posts/${post.id}/like`, {
+					method: "POST"
+				});
+
+				post.likesCount = Number(post.likesCount || post.likes || 0) + 1;
+				renderPosts();
+			} catch (error) {
+				showMessage(
+					"Like feature needs POST /api/posts/:id/like on the server."
+				);
+				console.error(error);
+			}
+		});
+
+		actions.appendChild(likeButton);
+		card.append(author, content, actions);
+
+		if (post.imageUrl) {
+			const image = document.createElement("img");
+			image.src = post.imageUrl;
+			image.alt = "Post image";
+			image.loading = "lazy";
+			card.insertBefore(image, actions);
+		}
+
+		feed.appendChild(card);
+	});
+}
+
+// =====================================
+// CREATE A POST
+// Requires form ID: postForm
+// and input/textarea name="content"
+// =====================================
+
+$("#postForm")?.addEventListener("submit", async (event) => {
+	event.preventDefault();
+
+	const form = event.currentTarget;
+	const field = form.elements.namedItem("content");
+	const content = field?.value.trim();
+
+	if (!content) {
+		showMessage("Write something before posting.");
+		return;
+	}
+
+	try {
+		await apiRequest("/posts", {
+			method: "POST",
+			body: JSON.stringify({ content })
+		});
+
+		field.value = "";
+		await loadPosts();
+		showMessage("Post published!", "success");
+	} catch (error) {
+		console.error("Create post error:", error);
+		showMessage(
+			"Posting needs a POST /api/posts endpoint in server.js."
+		);
+	}
+});
+
+// =====================================
+// START APP WHEN PAGE LOADS
+// =====================================
+
+document.addEventListener("DOMContentLoaded", () => {
+	checkSession();
+});
+	</script>
 </body>
 </html>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/main.js"></script>
