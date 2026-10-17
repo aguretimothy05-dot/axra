@@ -1,0 +1,17 @@
+{
+  "name": "Axra Chat",
+  "short_name": "Axra",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1240/1240194.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
+

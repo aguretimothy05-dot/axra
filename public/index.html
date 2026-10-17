@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Axra - Chat, Call, Photos &amp; Stories</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{display:flex;height:100vh;background:#0a0e1a;color:#fff;font-family:system-ui,-apple-system;overflow:hidden}
@@ -41,7 +47,7 @@ body{display:flex;height:100vh;background:#0a0e1a;color:#fff;font-family:system-
 .msg.me{align-self:flex-end;background:#2563eb;border-bottom-right-radius:6px}
 .msg.other{border-bottom-left-radius:6px}
 .msg img.chat-img{max-width:100%;max-height:300px;border-radius:12px;display:block;margin-top:8px;cursor:pointer}
-.msg.msgTime{font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px;text-align:right}
+.msg .msgTime{font-size:10px;color:rgba(255,255,255,0.5);margin-top:4px;text-align:right}
 #previewBar{display:none;padding:10px 14px;background:#111827;border-top:1px solid #1f2937;align-items:center;gap:10px}
 #previewBar img{max-height:70px;border-radius:8px}
 #inputArea{display:flex;gap:8px;padding:12px 14px;border-top:1px solid #1f2937;background:#111827;align-items:center}
@@ -117,16 +123,16 @@ function renderStories(){
  add.onclick=()=>document.getElementById('fileInput').click();
  bar.appendChild(add);
  (allUsers.slice(0,8)).forEach(u=>{
-	const el=document.createElement('div'); el.className='storyItem';
-	el.innerHTML=`<div class="storyRing"><div class="storyAvatar">${(u.username||'U')[0].toUpperCase()}</div></div><div class="storyName">${u.username}</div>`;
-	el.onclick=()=>openStory(u);
-	bar.appendChild(el);
+  const el=document.createElement('div'); el.className='storyItem';
+  el.innerHTML=`<div class="storyRing"><div class="storyAvatar">${(u.username||'U')[0].toUpperCase()}</div></div><div class="storyName">${u.username}</div>`;
+  el.onclick=()=>openStory(u);
+  bar.appendChild(el);
  });
  stories.forEach(s=>{
-	const el=document.createElement('div'); el.className='storyItem';
-	el.innerHTML=`<div class="storyRing"><div class="storyAvatar" style="background-image:url('${s.image}')"></div></div><div class="storyName">${s.username}</div>`;
-	el.onclick=()=>openStory(s,true);
-	bar.appendChild(el);
+  const el=document.createElement('div'); el.className='storyItem';
+  el.innerHTML=`<div class="storyRing"><div class="storyAvatar" style="background-image:url('${s.image}')"></div></div><div class="storyName">${s.username}</div>`;
+  el.onclick=()=>openStory(s,true);
+  bar.appendChild(el);
  });
 }
 function renderList(q=''){
@@ -135,15 +141,14 @@ function renderList(q=''){
  items=items.concat(allUsers.map(u=>({...u,name:u.name||u.username,last:'@'+u.username,time:''})));
  items=items.concat(groups.map(g=>({...g,isGroup:true,name:g.name,last:'Group • '+g.members?.length+' members',time:''})));
  const filter=(q||'').toLowerCase();
- items.filter(u=>!q|| (u.name||'').toLowerCase().includes(filter) || (u.username||'').toLowerCase().includes(filter))
-.forEach(u=>{
-	const el=document.createElement('div');
-	const isActive = (u.isGlobal && currentChat.type==='global') || (!u.isGlobal &&!u.isGroup && currentChat.id === (u._id||u.id)) || (u.isGroup && currentChat.id === (u._id||u.id));
-	el.className='chatItem'+(isActive?' active':'');
-	const initial=(u.username||u.name||'G')[0].toUpperCase();
-	el.innerHTML=`<div class="avatar">${initial}</div><div class="chatInfo"><div class="chatTop"><div class="name">${u.isGlobal?'Global Chat':(u.name||u.username)}</div><div class="time">${u.time||''}</div></div><div class="last">${u.last||''}</div></div>`;
-	el.onclick=()=>{ if(u.isGlobal) loadGlobal(); else if(u.isGroup) openGroup(u); else openPrivate(u); };
-	list.appendChild(el);
+ items.filter(u=>!q|| (u.name||'').toLowerCase().includes(filter) || (u.username||'').toLowerCase().includes(filter)).forEach(u=>{
+  const el=document.createElement('div');
+  const isActive = (u.isGlobal && currentChat.type==='global') || (!u.isGlobal &&!u.isGroup && currentChat.id === (u._id||u.id)) || (u.isGroup && currentChat.id === (u._id||u.id));
+  el.className='chatItem'+(isActive?' active':'');
+  const initial=(u.username||u.name||'G')[0].toUpperCase();
+  el.innerHTML=`<div class="avatar">${initial}</div><div class="chatInfo"><div class="chatTop"><div class="name">${u.isGlobal?'Global Chat':(u.name||u.username)}</div><div class="time">${u.time||''}</div></div><div class="last">${u.last||''}</div></div>`;
+  el.onclick=()=>{ if(u.isGlobal) loadGlobal(); else if(u.isGroup) openGroup(u); else openPrivate(u); };
+  list.appendChild(el);
  });
 }
 async function loadGlobal(){
@@ -152,7 +157,7 @@ async function loadGlobal(){
 }
 function openPrivate(u){
  const realId=u._id||u.id; if(!realId){ alert('User ID missing!'); return; }
- currentChat={type:'private',id:realId, user:u}; $('chatName').textContent=u.name||u.username; $('chatStatus').textContent='@'+u.username; $('headerAvatar').textContent=(u.username||'U')[0].toUpperCase();
+ currentChat={type:'private',id:realId,user:u}; $('chatName').textContent=u.name||u.username; $('chatStatus').textContent='@'+u.username; $('headerAvatar').textContent=(u.username||'U')[0].toUpperCase();
  renderList(); showChat(); loadPrivate(realId);
 }
 function openGroup(g){
@@ -165,19 +170,18 @@ function renderMessages(msgs){
  const box=$('messages'); box.innerHTML='';
  if(!msgs||msgs.length===0){ box.innerHTML='<div style="color:#4b5563;text-align:center;margin-top:40px">No messages yet<br><span style="font-size:12px">Send a photo or say hi 👋</span></div>'; return; }
  msgs.forEach(m=>{
-	const isMe = myUser && (m.sender===myUser._id || m.sender_id===myUser._id || m.sender_username===myUser.username || m.sender==myUser.username || m.sender==myUser._id);
-	const text=m.text||m.message||'';
-	const sender=m.sender_username||m.senderUsername||m.sender_name||'';
-	const img = m.image || m.imageUrl || '';
-	const div=document.createElement('div'); div.className='msg '+(isMe?'me':'other');
-	let html='';
-	if(currentChat.type!=='private' &&!isMe && sender) html+=`<div style="font-size:11px;color:#60a5fa;margin-bottom:4px;font-weight:700">${sender}</div>`;
-	if(text) html+=`<div style="white-space:pre-wrap">${escapeHtml(text)}</div>`;
-	if(img) html+=`<img src="${img}" class="chat-img" onclick="window.open(this.src,'_blank')" onerror="this.style.display='none'">`;
-	if(!img && text && text.includes('<img')) html=text;
-	html+=`<div class="msgTime">${new Date(m.createdAt||m.timestamp||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`;
-	div.innerHTML=html;
-	box.appendChild(div);
+  const isMe=myUser&&(m.sender===myUser._id||m.sender_id===myUser._id||m.sender_username===myUser.username||m.sender==myUser.username||m.sender==myUser._id);
+  const text=m.text||m.message||'';
+  const sender=m.sender_username||m.senderUsername||m.sender_name||'';
+  const img=m.image||m.imageUrl||'';
+  const div=document.createElement('div'); div.className='msg '+(isMe?'me':'other');
+  let html='';
+  if(currentChat.type!=='private'&&!isMe&&sender) html+=`<div style="font-size:11px;color:#60a5fa;margin-bottom:4px;font-weight:700">${sender}</div>`;
+  if(text) html+=`<div style="white-space:pre-wrap">${escapeHtml(text)}</div>`;
+  if(img) html+=`<img src="${img}" class="chat-img" onclick="window.open(this.src,'_blank')" onerror="this.style.display='none'">`;
+  if(!img&&text&&text.includes('<img')) html=text;
+  html+=`<div class="msgTime">${new Date(m.createdAt||m.timestamp||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`;
+  div.innerHTML=html; box.appendChild(div);
  });
  box.scrollTop=box.scrollHeight;
 }
@@ -186,92 +190,76 @@ async function send(){
  const input=$('msgInput'); const txt=input.value.trim(); if(!txt) return; input.value='';
  const box=$('messages'); const temp=document.createElement('div'); temp.className='msg me'; temp.innerHTML=`${escapeHtml(txt)}<div class="msgTime">now</div>`; box.appendChild(temp); box.scrollTop=box.scrollHeight;
  try{
-	if(currentChat.type==='global') await api('/api/messages/global',{method:'POST',body:JSON.stringify({text:txt})});
-	else if(currentChat.type==='private') await api('/api/messages/private/'+currentChat.id,{method:'POST',body:JSON.stringify({text:txt})});
-	else if(currentChat.type==='group') await api('/api/messages/group/'+currentChat.id,{method:'POST',body:JSON.stringify({text:txt})});
+  if(currentChat.type==='global') await api('/api/messages/global',{method:'POST',body:JSON.stringify({text:txt})});
+  else if(currentChat.type==='private') await api('/api/messages/private/'+currentChat.id,{method:'POST',body:JSON.stringify({text:txt})});
+  else if(currentChat.type==='group') await api('/api/messages/group/'+currentChat.id,{method:'POST',body:JSON.stringify({text:txt})});
  }catch(e){ console.error(e); }
 }
-$('fileInput').addEventListener('change', async (e)=>{
-	const file=e.target.files[0]; if(!file) return;
-	const isStory = confirm('Send as Story? Click Cancel to send as chat photo');
-	if(isStory){
-		const fd=new FormData(); fd.append('file',file);
-		try{
-			const res=await fetch('/api/upload',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:fd});
-			const data=await res.json();
-			if(data.url){
-				stories.unshift({username:myUser?.username||'You',image:data.url,createdAt:Date.now()});
-				try{ await api('/api/stories',{method:'POST',body:JSON.stringify({image:data.url})}); }catch{}
-				renderStories(); alert('Story posted! Will disappear in 24h');
-			}
-		}catch(err){ console.error(err); }
-	} else {
-		const reader=new FileReader();
-		reader.onload=ev=>{ $('previewImg').src=ev.target.result; $('previewName').textContent=file.name+' ('+Math.round(file.size/1024)+'KB)'; $('previewBar').style.display='flex'; };
-		reader.readAsDataURL(file);
-		const fd=new FormData(); fd.append('file',file);
-		try{
-			const res=await fetch('/api/upload',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:fd});
-			const data=await res.json();
-			if(data.url) pendingImageUrl=data.url; else { alert('Upload failed'); console.log(data); }
-		}catch(err){ console.error(err); alert('Upload error'); }
-	}
-	e.target.value='';
+$('fileInput').addEventListener('change',async e=>{
+ const file=e.target.files[0]; if(!file) return;
+ const isStory=confirm('Send as Story? Click Cancel to send as chat photo');
+ if(isStory){
+  const fd=new FormData(); fd.append('file',file);
+  try{ const res=await fetch('/api/upload',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:fd}); const data=await res.json();
+   if(data.url){ stories.unshift({username:myUser?.username||'You',image:data.url,createdAt:Date.now()}); try{await api('/api/stories',{method:'POST',body:JSON.stringify({image:data.url})});}catch{} renderStories(); alert('Story posted! Will disappear in 24h'); }
+  }catch(err){console.error(err);}
+ }else{
+  const reader=new FileReader(); reader.onload=ev=>{$('previewImg').src=ev.target.result;$('previewName').textContent=file.name+' ('+Math.round(file.size/1024)+'KB)';$('previewBar').style.display='flex';}; reader.readAsDataURL(file);
+  const fd=new FormData(); fd.append('file',file);
+  try{const res=await fetch('/api/upload',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:fd});const data=await res.json();if(data.url)pendingImageUrl=data.url;else{alert('Upload failed');console.log(data);}}
+  catch(err){console.error(err);alert('Upload error');}
+ }
+ e.target.value='';
 });
 function cancelPreview(){ $('previewBar').style.display='none'; $('previewImg').src=''; pendingImageUrl=null; }
 async function sendImage(){
-	if(!pendingImageUrl) return; const url=pendingImageUrl;
-	const box=$('messages'); const div=document.createElement('div'); div.className='msg me'; div.innerHTML=`<img src="${url}" class="chat-img"><div class="msgTime">now</div>`; box.appendChild(div); box.scrollTop=box.scrollHeight;
-	cancelPreview();
-	try{
-		if(currentChat.type==='global') await api('/api/messages/global',{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
-		else if(currentChat.type==='private') await api('/api/messages/private/'+currentChat.id,{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
-		else if(currentChat.type==='group') await api('/api/messages/group/'+currentChat.id,{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
-	}catch(e){ console.error(e); }
+ if(!pendingImageUrl)return; const url=pendingImageUrl;
+ const box=$('messages'); const div=document.createElement('div'); div.className='msg me'; div.innerHTML=`<img src="${url}" class="chat-img"><div class="msgTime">now</div>`; box.appendChild(div); box.scrollTop=box.scrollHeight;
+ cancelPreview();
+ try{
+  if(currentChat.type==='global') await api('/api/messages/global',{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
+  else if(currentChat.type==='private') await api('/api/messages/private/'+currentChat.id,{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
+  else if(currentChat.type==='group') await api('/api/messages/group/'+currentChat.id,{method:'POST',body:JSON.stringify({text:'',image:url,type:'image'})});
+ }catch(e){console.error(e);}
 }
 function startCall(video){
-	if(!currentChat.id || currentChat.type==='global'){ alert('Select a private chat to call'); return; }
-	$('callModal').style.display='flex';
-	$('callAvatar').textContent=($('chatName').textContent||'U')[0].toUpperCase();
-	$('callName').textContent=$('chatName').textContent;
-	$('callStatus').textContent=video?'Video calling...':'Calling...';
-	if(socket) socket.emit('call-user',{to:currentChat.id,from:myUser,video});
+ if(!currentChat.id||currentChat.type==='global'){alert('Select a private chat to call');return;}
+ $('callModal').style.display='flex'; $('callAvatar').textContent=($('chatName').textContent||'U')[0].toUpperCase(); $('callName').textContent=$('chatName').textContent; $('callStatus').textContent=video?'Video calling...':'Calling...';
+ if(socket)socket.emit('call-user',{to:currentChat.id,from:myUser,video});
 }
-function endCall(){ $('callModal').style.display='none'; if(socket) socket.emit('end-call',{to:currentChat.id}); }
-function acceptCall(){ $('callModal').style.display='none'; if(socket) socket.emit('accept-call',{to:currentChat.id}); }
+function endCall(){ $('callModal').style.display='none'; if(socket)socket.emit('end-call',{to:currentChat.id}); }
+function acceptCall(){ $('callModal').style.display='none'; if(socket)socket.emit('accept-call',{to:currentChat.id}); }
 function showChatInfo(){ alert('Axra Chat\nUser: '+$('chatName').textContent+'\nID: '+currentChat.id); }
-function newGroup(){ const name=prompt('Group name?'); if(!name) return; api('/api/groups',{method:'POST',body:JSON.stringify({name})}).then(()=>location.reload()); }
+function newGroup(){const name=prompt('Group name?');if(!name)return;api('/api/groups',{method:'POST',body:JSON.stringify({name})}).then(()=>location.reload());}
 function openStory(u,isReal){
-	const img=isReal?u.image:null;
-	$('storyModal').style.display='flex';
-	$('storyUser').textContent=u.username||u.name||'User';
-	$('storyAvatar').textContent=(u.username||'U')[0].toUpperCase();
-	if(img) $('storyContent').innerHTML=`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`;
-	else $('storyContent').innerHTML=`<div style="text-align:center"><div class="avatar" style="width:80px;height:80px;margin:0 auto 16px;font-size:30px">${(u.username||'U')[0].toUpperCase()}</div><div style="font-size:18px;font-weight:700">${u.username}</div><div style="color:#9ca3af;margin-top:8px">No stories yet</div></div>`;
-	const prog=$('storyProgress'); prog.innerHTML='<div class="prog"><div class="progFill" style="width:100%"></div></div>';
+ const img=isReal?u.image:null; $('storyModal').style.display='flex'; $('storyUser').textContent=u.username||u.name||'User'; $('storyAvatar').textContent=(u.username||'U')[0].toUpperCase();
+ if(img)$('storyContent').innerHTML=`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`;
+ else $('storyContent').innerHTML=`<div style="text-align:center"><div class="avatar" style="width:80px;height:80px;margin:0 auto 16px;font-size:30px">${(u.username||'U')[0].toUpperCase()}</div><div style="font-size:18px;font-weight:700">${u.username}</div><div style="color:#9ca3af;margin-top:8px">No stories yet</div></div>`;
+ $('storyProgress').innerHTML='<div class="prog"><div class="progFill" style="width:100%"></div></div>';
 }
 function closeStory(){ $('storyModal').style.display='none'; }
-$('msgInput').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
+$('msgInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
 (async()=>{
- if(!token){
-	let username=prompt('Enter username to login (e.g. Timm)'); if(!username) return;
-	try{ let r=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username})}); if(r.token){ token=r.token; localStorage.setItem('token',token); localStorage.setItem('user',JSON.stringify(r.user)); myUser=r.user; } else throw r; }catch{ alert('Login failed, try register'); return; }
+ if(!token){let username=prompt('Enter username to login (e.g. Timm)');if(!username)return;
+  try{let r=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username})});if(r.token){token=r.token;localStorage.setItem('token',token);localStorage.setItem('user',JSON.stringify(r.user));myUser=r.user;}else throw r;}
+  catch{alert('Login failed, try register');return;}
  }
- try{ const users=await api('/api/users'); allUsers=(users||[]).filter(u=>!myUser|| (u._id||u.id)!==(myUser._id||myUser.id)); }catch{}
- try{ const g=await api('/api/groups'); groups=g||[]; }catch{}
- try{ const s=await api('/api/stories'); stories=s||[]; }catch{}
- renderStories(); renderList(); loadGlobal();
- try{
-	 const scr=document.createElement('script'); scr.src='/socket.io/socket.io.js';
-	 scr.onload=()=>{
-		 socket=io(); window.socket=socket;
-		 socket.on('newMessage',()=>{ if(currentChat.type==='global') loadGlobal(); else if(currentChat.type==='private') loadPrivate(currentChat.id); else if(currentChat.type==='group') loadGroup(currentChat.id); });
-		 socket.on('incoming-call',(data)=>{ $('callModal').style.display='flex'; $('callName').textContent=data.from?.username||'Someone'; $('callStatus').textContent=(data.video?'Video':'Voice')+' call incoming...'; $('acceptBtn').style.display='block'; currentChat={type:'private',id:data.from._id||data.from.id}; });
-		 socket.on('call-ended',()=>{ $('callModal').style.display='none'; });
-	 };
-	 document.body.appendChild(scr);
- }catch{}
+ try{const users=await api('/api/users');allUsers=(users||[]).filter(u=>!myUser||(u._id||u.id)!==(myUser._id||myUser.id));}catch{}
+ try{const g=await api('/api/groups');groups=g||[];}catch{}
+ try{const s=await api('/api/stories');stories=s||[];}catch{}
+ renderStories();renderList();loadGlobal();
+ try{const scr=document.createElement('script');scr.src='/socket.io/socket.io.js';scr.onload=()=>{
+  socket=io();window.socket=socket;
+  socket.on('newMessage',()=>{if(currentChat.type==='global')loadGlobal();else if(currentChat.type==='private')loadPrivate(currentChat.id);else if(currentChat.type==='group')loadGroup(currentChat.id);});
+  socket.on('incoming-call',data=>{$('callModal').style.display='flex';$('callName').textContent=data.from?.username||'Someone';$('callStatus').textContent=(data.video?'Video':'Voice')+' call incoming...';$('acceptBtn').style.display='block';currentChat={type:'private',id:data.from._id||data.from.id};});
+  socket.on('call-ended',()=>{$('callModal').style.display='none';});
+ };document.body.appendChild(scr);}catch{}
 })();
+</script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(reg=>console.log('Axra App installed:',reg.scope)).catch(err=>console.log('SW failed:',err));});}
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;console.log('Ready to install Axra app');});
 </script>
 </body>
 </html>
