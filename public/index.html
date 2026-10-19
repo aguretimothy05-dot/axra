@@ -1,630 +1,113 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>AXRACONNECT</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Axrachat</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+	<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+	<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+	<style>
+		* { box-sizing: border-box; }
+		body { margin: 0; background: #fafafa; color: #171717; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+		button { -webkit-tap-highlight-color: transparent; }
+		.story-ring { padding: 2px; background: linear-gradient(35deg,#ffb800,#ff5a45 45%,#c135e8 75%,#6554ff); }
+		.hide-scrollbar { scrollbar-width: none; }
+		.hide-scrollbar::-webkit-scrollbar { display: none; }
+		@media (max-width: 767px) { .desktop-nav { display: none; } }
+	</style>
 </head>
 <body>
-	<script>
-"use strict";
+	<div id="root"></div>
+	<script type="text/babel">
+		const { useState } = React;
+		const Icon = ({ type, size = 24, filled = false }) => {
+			const p = {
+				home: <><path d="m3 10 9-7 9 7M5 9v11h14V9M9 20v-7h6v7"/></>,
+				search: <><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></>,
+				explore: <><circle cx="12" cy="12" r="9"/><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1z"/></>,
+				reels: <><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3z"/></>,
+				chat: <><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></>,
+				heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.9-8.6a5.5 5.5 0 0 0-.1-7.8z" fill={filled ? 'currentColor' : 'none'}/>,
+				plus: <><path d="M12 5v14M5 12h14"/></>,
+				comment: <><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></>,
+				send: <><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/></>,
+				save: <path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4z"/>,
+				more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
+				close: <><path d="m18 6-12 12M6 6l12 12"/></>
+			};
+			return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{p[type]}</svg>;
+		};
 
-// =====================================
-// AXRACONNECT - MAIN JAVASCRIPT
-// =====================================
+		const people = [
+			{ name: 'Your story', img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=faces', own: true },
+			{ name: 'jessica_w', img: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&h=120&fit=crop&crop=faces' },
+			{ name: 'marco.jpg', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=faces' },
+			{ name: 'sophia.lane', img: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=120&h=120&fit=crop&crop=faces' },
+			{ name: 'theo_travels', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop&crop=faces' },
+			{ name: 'amina.art', img: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=120&h=120&fit=crop&crop=faces' },
+			{ name: 'noahcreates', img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf37732a?w=120&h=120&fit=crop&crop=faces' }
+		];
+		const initialPosts = [
+			{ id: 1, user: 'jessica_w', avatar: people[1].img, place: 'Big Sur, California', photo: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1000&h=1000&fit=crop', caption: 'A little reminder to take the scenic route 🌿', likes: 1284, liked: false, comments: ['This view is everything ✨'] },
+			{ id: 2, user: 'marco.jpg', avatar: people[2].img, place: 'Brooklyn, New York', photo: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=1000&h=1000&fit=crop', caption: 'Golden hour never gets old.', likes: 846, liked: true, comments: ['The colors!'] },
+			{ id: 3, user: 'amina.art', avatar: people[5].img, place: 'Somewhere in the city', photo: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=1000&h=1000&fit=crop', caption: 'Collecting moments, not things ☀️', likes: 2301, liked: false, comments: [] }
+		];
 
-const API = "/api";
-
-let currentUser = null;
-let selectedUser = null;
-let socket = null;
-let posts = [];
-let users = [];
-
-// Get HTML elements safely
-const $ = (selector) => document.querySelector(selector);
-
-function showMessage(message, type = "error") {
-	const element =
-		$("#messageStatus") ||
-		$("#error") ||
-		$("#statusMessage");
-
-	if (element) {
-		element.textContent = message;
-		element.style.color =
-			type === "success" ? "#25c58a" : "#ff6b75";
-	} else {
-		alert(message);
-	}
-}
-
-// =====================================
-// API REQUEST HELPER
-// =====================================
-
-async function apiRequest(path, options = {}) {
-	const response = await fetch(`${API}${path}`, {
-		...options,
-		credentials: "same-origin",
-		headers: {
-			"Content-Type": "application/json",
-			...(options.headers || {})
+		function App() {
+			const [posts, setPosts] = useState(initialPosts);
+			const [saved, setSaved] = useState({});
+			const [comment, setComment] = useState({});
+			const [modal, setModal] = useState(false);
+			const [photo, setPhoto] = useState('');
+			const [caption, setCaption] = useState('');
+			const [notice, setNotice] = useState('');
+			const [active, setActive] = useState('Home');
+			const flash = text => { setNotice(text); window.setTimeout(() => setNotice(''), 2200); };
+			const like = id => setPosts(items => items.map(p => p.id === id ? { ...p, liked: !p.liked, likes: p.likes + (p.liked ? -1 : 1) } : p));
+			const addComment = (event, id) => {
+				event.preventDefault(); const text = (comment[id] || '').trim(); if (!text) return;
+				setPosts(items => items.map(p => p.id === id ? { ...p, comments: [...p.comments, text] } : p));
+				setComment(items => ({ ...items, [id]: '' }));
+			};
+			const share = () => {
+				if (!photo.trim()) return;
+				setPosts(items => [{ id: Date.now(), user: 'alex.morgan', avatar: people[0].img, place: 'Shared with everyone', photo: photo.trim(), caption: caption.trim(), likes: 0, liked: false, comments: [] }, ...items]);
+				setPhoto(''); setCaption(''); setModal(false); flash('Your post has been shared.');
+			};
+			const navigation = [['Home','home'],['Search','search'],['Explore','explore'],['Reels','reels'],['Messages','chat'],['Notifications','heart'],['Create','plus']];
+			return <div className="min-h-screen">
+				<aside className="desktop-nav fixed inset-y-0 left-0 z-20 flex w-[245px] flex-col border-r border-gray-200 bg-white px-3 py-8">
+					<a href="#" className="mb-9 px-3 text-[26px] font-bold tracking-[-1.5px]">axrachat<span className="text-fuchsia-600">.</span></a>
+					<nav className="space-y-1">{navigation.map(([label, icon]) => <button key={label} onClick={() => label === 'Create' ? setModal(true) : setActive(label)} className={`flex w-full items-center gap-4 rounded-lg px-3 py-3 text-left text-[15px] hover:bg-gray-100 ${active === label ? 'font-bold' : ''}`}><Icon type={icon}/>{label}{label === 'Messages' && <span className="ml-auto h-2 w-2 rounded-full bg-fuchsia-600"/>}</button>)}</nav>
+					<button className="mt-2 flex items-center gap-4 rounded-lg px-3 py-3 text-left text-[15px] hover:bg-gray-100"><img src={people[0].img} className="h-6 w-6 rounded-full object-cover"/>Profile</button>
+					<button onClick={() => flash('More options')} className="mt-auto flex items-center gap-4 rounded-lg px-3 py-3 text-left text-[15px] hover:bg-gray-100"><Icon type="more"/>More</button>
+				</aside>
+				<header className="sticky top-0 z-10 flex h-[58px] items-center justify-between border-b border-gray-200 bg-white px-4 md:hidden"><span className="text-[23px] font-bold tracking-[-1px]">axrachat<span className="text-fuchsia-600">.</span></span><div className="flex gap-5"><button onClick={() => setModal(true)} aria-label="Create post"><Icon type="plus"/></button><button onClick={() => setActive('Messages')} aria-label="Messages"><Icon type="chat"/></button></div></header>
+				<main className="mx-auto flex max-w-[1000px] justify-center md:ml-[245px]">
+					<section className="w-full max-w-[630px] pb-20 md:px-5 md:pt-8">
+						<div className="hide-scrollbar mb-4 flex gap-4 overflow-x-auto border-b border-gray-200 bg-white px-4 py-4 md:mb-6 md:gap-5 md:border-0 md:bg-transparent md:px-0 md:py-0">
+							{people.map(person => <button key={person.name} onClick={() => flash(person.own ? 'Add to your story' : `Viewing ${person.name}'s story`)} className="flex w-[66px] shrink-0 flex-col items-center gap-1.5"><span className={`story-ring relative rounded-full ${person.own ? 'bg-gray-200' : ''}`}><img src={person.img} className="h-[58px] w-[58px] rounded-full border-2 border-white object-cover"/>{person.own && <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-blue-500 text-sm font-bold text-white">+</span>}</span><span className="w-[68px] truncate text-center text-[11px] text-gray-700">{person.name}</span></button>)}
+						</div>
+						<div className="space-y-5 md:space-y-6">{posts.map(post => <article key={post.id} className="overflow-hidden border-b border-gray-200 bg-white pb-4 md:rounded-sm md:border md:pb-0">
+							<div className="flex h-[60px] items-center justify-between px-3 md:px-4"><div className="flex items-center gap-3"><img src={post.avatar} className="h-8 w-8 rounded-full object-cover"/><div><div className="flex items-center gap-1 text-[13px] font-semibold">{post.user}<span className="text-blue-500">✓</span></div><div className="text-[11px] text-gray-600">{post.place}</div></div></div><button aria-label="More options" onClick={() => flash('More options')}><Icon type="more" size={22}/></button></div>
+							<div className="aspect-square w-full bg-gray-100"><img src={post.photo} alt={post.caption || 'Photo shared on Axrachat'} className="h-full w-full object-cover" onDoubleClick={() => !post.liked && like(post.id)}/></div>
+							<div className="px-3 pt-2 md:px-4"><div className="flex items-center justify-between"><div className="flex items-center gap-4"><button aria-label={post.liked ? 'Unlike post' : 'Like post'} onClick={() => like(post.id)} className={post.liked ? 'text-red-500' : ''}><Icon type="heart" filled={post.liked}/></button><button aria-label="Comment" onClick={() => document.getElementById(`comment-${post.id}`)?.focus()}><Icon type="comment"/></button><button aria-label="Share" onClick={() => flash('Link copied to clipboard')}><Icon type="send"/></button></div><button aria-label="Save post" onClick={() => setSaved(items => ({ ...items, [post.id]: !items[post.id] }))} className={saved[post.id] ? 'text-fuchsia-600' : ''}><Icon type="save" filled={saved[post.id]}/></button></div>
+								<div className="mt-2 text-[13px] font-semibold">{post.likes.toLocaleString()} likes</div>{post.caption && <p className="mt-1 text-[13px] leading-[19px]"><span className="mr-1 font-semibold">{post.user}</span>{post.caption}</p>}
+								{post.comments.slice(-2).map((text, i) => <p key={i} className="mt-1 text-[13px]"><span className="mr-1 font-semibold">{i ? 'you' : 'friend'}</span>{text}</p>)}<div className="mt-2 text-[10px] tracking-wide text-gray-500">2 HOURS AGO</div>
+							</div>
+							<form onSubmit={event => addComment(event, post.id)} className="mt-3 hidden items-center border-t border-gray-100 px-4 py-3 md:flex"><input id={`comment-${post.id}`} value={comment[post.id] || ''} onChange={event => setComment(items => ({ ...items, [post.id]: event.target.value }))} placeholder="Add a comment..." className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"/><button disabled={!(comment[post.id] || '').trim()} className="text-[13px] font-semibold text-blue-500 disabled:opacity-40">Post</button></form>
+						</article>)}</div>
+					</section>
+					<aside className="hidden w-[320px] shrink-0 pl-8 pt-10 lg:block"><div className="flex items-center gap-3"><img src={people[0].img} className="h-11 w-11 rounded-full object-cover"/><div className="flex-1"><div className="text-[13px] font-semibold">alex.morgan</div><div className="text-[13px] text-gray-500">Alex Morgan</div></div><button onClick={() => flash('You are viewing your profile')} className="text-xs font-semibold text-blue-500">Switch</button></div><div className="mb-4 mt-6 flex justify-between text-[13px]"><span className="font-semibold text-gray-500">Suggestions For You</span><button className="text-xs font-semibold">See All</button></div>{people.slice(3).map(person => <div key={person.name} className="mb-3 flex items-center gap-3"><img src={person.img} className="h-8 w-8 rounded-full object-cover"/><div className="min-w-0 flex-1"><div className="truncate text-xs font-semibold">{person.name}</div><div className="text-[11px] text-gray-500">Suggested for you</div></div><button onClick={() => flash(`Following ${person.name}`)} className="text-xs font-semibold text-blue-500">Follow</button></div>)}<p className="mt-8 text-[11px] leading-5 text-gray-400">About · Help · Press · API · Jobs · Privacy · Terms<br/>Locations · Language · Axrachat © 2025</p></aside>
+				</main>
+				<nav className="fixed inset-x-0 bottom-0 z-20 flex h-[54px] items-center justify-around border-t border-gray-200 bg-white md:hidden">{[['home','Home'],['search','Search'],['plus','Create'],['reels','Reels'],['heart','Notifications']].map(([icon,label]) => <button key={icon} onClick={() => label === 'Create' ? setModal(true) : setActive(label)} aria-label={label}><Icon type={icon} filled={icon === 'home' && active === 'Home'}/></button>)}</nav>
+				{modal && <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4" onClick={event => event.target === event.currentTarget && setModal(false)}><div className="w-full max-w-[440px] overflow-hidden rounded-xl bg-white shadow-2xl"><div className="flex h-12 items-center justify-between border-b px-4"><button onClick={() => setModal(false)} aria-label="Close"><Icon type="close" size={21}/></button><span className="text-sm font-semibold">Create new post</span><button onClick={share} className="text-sm font-semibold text-blue-500">Share</button></div><div className="p-6"><div className="mb-5 flex h-44 items-center justify-center overflow-hidden rounded-lg bg-gray-50">{photo ? <img src={photo} alt="Post preview" className="h-full w-full object-cover"/> : <p className="text-lg text-gray-600">Add a photo to get started</p>}</div><label className="mb-1 block text-xs font-semibold text-gray-600">Photo URL</label><input value={photo} onChange={event => setPhoto(event.target.value)} placeholder="https://example.com/photo.jpg" className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"/><label className="mb-1 block text-xs font-semibold text-gray-600">Caption</label><textarea value={caption} onChange={event => setCaption(event.target.value)} placeholder="Write a caption..." rows="3" className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"/></div></div></div>}
+				{notice && <div role="status" className="fixed bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full bg-gray-900 px-5 py-3 text-sm text-white shadow-lg md:bottom-6">{notice}</div>}
+			</div>;
 		}
-	});
-
-	const data = await response.json().catch(() => ({}));
-
-	if (!response.ok) {
-		throw new Error(
-			data.message ||
-			data.error ||
-			`Request failed: ${response.status}`
-		);
-	}
-
-	return data;
-}
-
-// =====================================
-// AUTHENTICATION: TAB SWITCHING
-// =====================================
-
-function showLogin() {
-	const loginForm = $("#loginForm");
-	const registerForm = $("#registerForm");
-
-	if (loginForm) loginForm.style.display = "block";
-	if (registerForm) registerForm.style.display = "none";
-
-	$("#loginTab")?.classList.add("active");
-	$("#registerTab")?.classList.remove("active");
-
-	showMessage("");
-}
-
-function showRegister() {
-	const loginForm = $("#loginForm");
-	const registerForm = $("#registerForm");
-
-	if (loginForm) loginForm.style.display = "none";
-	if (registerForm) registerForm.style.display = "block";
-
-	$("#registerTab")?.classList.add("active");
-	$("#loginTab")?.classList.remove("active");
-
-	showMessage("");
-}
-
-// =====================================
-// REGISTER ACCOUNT
-// HTML form ID: registerForm
-// =====================================
-
-$("#registerTab")?.addEventListener("click", showRegister);
-$("#loginTab")?.addEventListener("click", showLogin);
-
-$("#registerForm")?.addEventListener("submit", async (event) => {
-	event.preventDefault();
-
-	const form = event.currentTarget;
-	const button = form.querySelector('button[type="submit"]') ||
-								 form.querySelector("button");
-
-	const values = new FormData(form);
-
-	const account = {
-		name: String(values.get("name") || "").trim(),
-		username: String(values.get("username") || "")
-			.trim()
-			.replace(/^@/, ""),
-		email: String(values.get("email") || "").trim().toLowerCase(),
-		country: String(values.get("country") || "").trim(),
-		password: String(values.get("password") || ""),
-		inviteCode: String(values.get("inviteCode") || "").trim()
-	};
-
-	if (
-		!account.name ||
-		!account.username ||
-		!account.email ||
-		!account.country ||
-		!account.password ||
-		!account.inviteCode
-	) {
-		showMessage("Please complete every field.");
-		return;
-	}
-
-	if (account.password.length < 10) {
-		showMessage("Your password must contain at least 10 characters.");
-		return;
-	}
-
-	try {
-		if (button) {
-			button.disabled = true;
-			button.textContent = "Creating account...";
-		}
-
-		const result = await apiRequest("/register", {
-			method: "POST",
-			body: JSON.stringify(account)
-		});
-
-		showMessage(
-			result.message || "Account created successfully!",
-			"success"
-		);
-
-		if (result.user) {
-			currentUser = result.user;
-			await openApplication();
-		} else {
-			showLogin();
-			showMessage(
-				"Account created. Please sign in.",
-				"success"
-			);
-		}
-	} catch (error) {
-		console.error("Registration error:", error);
-		showMessage(error.message || "Registration failed.");
-	} finally {
-		if (button) {
-			button.disabled = false;
-			button.textContent = "Create Account";
-		}
-	}
-});
-
-// =====================================
-// LOGIN
-// HTML form ID: loginForm
-// =====================================
-
-$("#loginForm")?.addEventListener("submit", async (event) => {
-	event.preventDefault();
-
-	const form = event.currentTarget;
-	const button = form.querySelector('button[type="submit"]') ||
-								 form.querySelector("button");
-
-	const values = new FormData(form);
-
-	const credentials = {
-		email: String(values.get("email") || "").trim().toLowerCase(),
-		password: String(values.get("password") || "")
-	};
-
-	if (!credentials.email || !credentials.password) {
-		showMessage("Enter your email and password.");
-		return;
-	}
-
-	try {
-		if (button) {
-			button.disabled = true;
-			button.textContent = "Signing in...";
-		}
-
-		const result = await apiRequest("/login", {
-			method: "POST",
-			body: JSON.stringify(credentials)
-		});
-
-		currentUser = result.user || null;
-
-		await openApplication();
-		showMessage("Welcome back!", "success");
-	} catch (error) {
-		console.error("Login error:", error);
-		showMessage(error.message || "Unable to sign in.");
-	} finally {
-		if (button) {
-			button.disabled = false;
-			button.textContent = "Sign In";
-		}
-	}
-});
-
-// =====================================
-// OPEN THE MAIN APP
-// =====================================
-
-async function openApplication() {
-	const auth = $("#auth");
-	const app = $("#app");
-
-	if (auth) auth.style.display = "none";
-	if (app) app.style.display = "flex";
-
-	if (currentUser) {
-		const profile = $("#profile");
-
-		if (profile) {
-			profile.textContent =
-				currentUser.name || currentUser.username || "My profile";
-		}
-	}
-
-	await loadUsers();
-	await loadPosts();
-
-	connectSocket();
-}
-
-// =====================================
-// CHECK EXISTING SESSION
-// =====================================
-
-async function checkSession() {
-	try {
-		const result = await apiRequest("/me");
-
-		currentUser = result.user || null;
-
-		if (currentUser) {
-			await openApplication();
-		} else {
-			showLogin();
-		}
-	} catch (error) {
-		console.log("No active session:", error.message);
-		showLogin();
-	}
-}
-
-// =====================================
-// LOGOUT
-// =====================================
-
-$("#logout")?.addEventListener("click", async () => {
-	try {
-		await apiRequest("/logout", { method: "POST" });
-	} catch (error) {
-		console.error("Logout error:", error);
-	}
-
-	if (socket) socket.disconnect();
-
-	currentUser = null;
-	selectedUser = null;
-
-	const app = $("#app");
-	const auth = $("#auth");
-
-	if (app) app.style.display = "none";
-	if (auth) auth.style.display = "flex";
-
-	showLogin();
-});
-
-// =====================================
-// SEARCH USERS
-// Requires GET /api/users?q=
-// =====================================
-
-async function loadUsers(search = "") {
-	const list = $("#peopleList");
-	if (!list) return;
-
-	list.innerHTML = "<p>Loading people...</p>";
-
-	try {
-		const result = await apiRequest(
-			`/users?q=${encodeURIComponent(search)}`
-		);
-
-		users = Array.isArray(result)
-			? result
-			: result.users || [];
-
-		list.replaceChildren();
-
-		if (users.length === 0) {
-			list.textContent = "No people found.";
-			return;
-		}
-
-		users.forEach((user) => {
-			if (currentUser && user.id === currentUser.id) return;
-
-			const button = document.createElement("button");
-			button.className = "person";
-			button.type = "button";
-
-			const name = document.createElement("strong");
-			name.textContent = user.name || user.username || "Member";
-
-			const country = document.createElement("span");
-			country.textContent = user.country || "";
-
-			button.append(name, country);
-
-			button.addEventListener("click", () => openChat(user));
-			list.appendChild(button);
-		});
-	} catch (error) {
-		console.error("User search error:", error);
-		list.textContent = `Could not load users: ${error.message}`;
-	}
-}
-
-$("#search")?.addEventListener("input", (event) => {
-	loadUsers(event.target.value.trim());
-});
-
-// =====================================
-// REAL-TIME CHAT
-// Requires Socket.IO on the server
-// =====================================
-
-function connectSocket() {
-	if (typeof io !== "function") {
-		console.warn("Socket.IO client was not loaded.");
-		return;
-	}
-
-	if (socket) socket.disconnect();
-
-	socket = io({ withCredentials: true });
-
-	socket.on("connect", () => {
-		console.log("Connected to chat server.");
-	});
-
-	socket.on("connect_error", (error) => {
-		console.error("Chat connection error:", error.message);
-	});
-
-	socket.on("private_message", (message) => {
-		if (
-			selectedUser &&
-			(
-				String(message.senderId) === String(selectedUser.id) ||
-				String(message.receiverId) === String(selectedUser.id)
-			)
-		) {
-			displayMessage(message);
-		}
-	});
-
-	socket.on("user_online", (userId) => {
-		console.log("User online:", userId);
-	});
-
-	socket.on("user_offline", (userId) => {
-		console.log("User offline:", userId);
-	});
-}
-
-// =====================================
-// OPEN PRIVATE CHAT
-// Requires GET /api/messages/:userId
-// =====================================
-
-async function openChat(user) {
-	selectedUser = user;
-
-	const header = $("#chatHeader");
-	const input = $("#messageInput");
-	const sendButton = $("#send");
-	const messages = $("#messages");
-
-	if (header) {
-		header.textContent =
-			user.name || user.username || "Private chat";
-	}
-
-	if (input) input.disabled = false;
-	if (sendButton) sendButton.disabled = false;
-
-	if (messages) messages.replaceChildren();
-
-	try {
-		const result = await apiRequest(
-			`/messages/${encodeURIComponent(user.id)}`
-		);
-
-		const history = Array.isArray(result)
-			? result
-			: result.messages || [];
-
-		history.forEach(displayMessage);
-	} catch (error) {
-		console.error("Message history error:", error);
-
-		if (messages) {
-			messages.textContent =
-				`Could not load chat history: ${error.message}`;
-		}
-	}
-
-	input?.focus();
-}
-
-// =====================================
-// DISPLAY MESSAGE SAFELY
-// =====================================
-
-function displayMessage(message) {
-	const container = $("#messages");
-	if (!container) return;
-
-	const bubble = document.createElement("div");
-
-	const mine =
-		currentUser &&
-		String(message.senderId ?? message.sender_id) ===
-			String(currentUser.id);
-
-	bubble.className = mine ? "message mine" : "message";
-
-	const text = document.createElement("p");
-	text.textContent =
-		message.text || message.content || message.message || "";
-
-	bubble.appendChild(text);
-	container.appendChild(bubble);
-	container.scrollTop = container.scrollHeight;
-}
-
-// =====================================
-// SEND PRIVATE MESSAGE
-// =====================================
-
-$("#messageForm")?.addEventListener("submit", (event) => {
-	event.preventDefault();
-
-	const input = $("#messageInput");
-	const text = input?.value.trim();
-
-	if (!text || !selectedUser) {
-		showMessage("Choose a person and enter a message.");
-		return;
-	}
-
-	if (!socket || !socket.connected) {
-		showMessage("Chat server is disconnected. Refresh and try again.");
-		return;
-	}
-
-	socket.emit("private_message", {
-		receiverId: selectedUser.id,
-		text
-	});
-
-	input.value = "";
-	input.focus();
-});
-
-// =====================================
-// SOCIAL POSTS / FEED
-// Requires GET /api/posts
-// =====================================
-
-async function loadPosts() {
-	const feed = $("#feed");
-	if (!feed) return;
-
-	feed.innerHTML = "<p>Loading posts...</p>";
-
-	try {
-		const result = await apiRequest("/posts");
-
-		posts = Array.isArray(result)
-			? result
-			: result.posts || [];
-
-		renderPosts();
-	} catch (error) {
-		console.warn("Posts endpoint unavailable:", error.message);
-		feed.textContent =
-			"The posts feed needs a GET /api/posts endpoint in server.js.";
-	}
-}
-
-function renderPosts() {
-	const feed = $("#feed");
-	if (!feed) return;
-
-	feed.replaceChildren();
-
-	posts.forEach((post) => {
-		const card = document.createElement("article");
-		card.className = "post";
-
-		const author = document.createElement("h3");
-		author.textContent =
-			post.name || post.username || "AxraConnect member";
-
-		const content = document.createElement("p");
-		content.textContent = post.content || post.text || "";
-
-		const actions = document.createElement("div");
-		actions.className = "post-actions";
-
-		const likeButton = document.createElement("button");
-		likeButton.type = "button";
-		likeButton.textContent =
-			`❤️ Like (${Number(post.likesCount || post.likes || 0)})`;
-
-		likeButton.addEventListener("click", async () => {
-			try {
-				await apiRequest(`/posts/${post.id}/like`, {
-					method: "POST"
-				});
-
-				post.likesCount = Number(post.likesCount || post.likes || 0) + 1;
-				renderPosts();
-			} catch (error) {
-				showMessage(
-					"Like feature needs POST /api/posts/:id/like on the server."
-				);
-				console.error(error);
-			}
-		});
-
-		actions.appendChild(likeButton);
-		card.append(author, content, actions);
-
-		if (post.imageUrl) {
-			const image = document.createElement("img");
-			image.src = post.imageUrl;
-			image.alt = "Post image";
-			image.loading = "lazy";
-			card.insertBefore(image, actions);
-		}
-
-		feed.appendChild(card);
-	});
-}
-
-// =====================================
-// CREATE A POST
-// Requires form ID: postForm
-// and input/textarea name="content"
-// =====================================
-
-$("#postForm")?.addEventListener("submit", async (event) => {
-	event.preventDefault();
-
-	const form = event.currentTarget;
-	const field = form.elements.namedItem("content");
-	const content = field?.value.trim();
-
-	if (!content) {
-		showMessage("Write something before posting.");
-		return;
-	}
-
-	try {
-		await apiRequest("/posts", {
-			method: "POST",
-			body: JSON.stringify({ content })
-		});
-
-		field.value = "";
-		await loadPosts();
-		showMessage("Post published!", "success");
-	} catch (error) {
-		console.error("Create post error:", error);
-		showMessage(
-			"Posting needs a POST /api/posts endpoint in server.js."
-		);
-	}
-});
-
-// =====================================
-// START APP WHEN PAGE LOADS
-// =====================================
-
-document.addEventListener("DOMContentLoaded", () => {
-	checkSession();
-});
+		ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 	</script>
 </body>
 </html>
-<script src="/socket.io/socket.io.js"></script>
-<script src="/server.js"></script>
