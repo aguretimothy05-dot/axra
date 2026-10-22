@@ -1,113 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Axrachat</title>
-	<script src="https://cdn.tailwindcss.com"></script>
-	<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-	<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-	<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-	<style>
-		* { box-sizing: border-box; }
-		body { margin: 0; background: #fafafa; color: #171717; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-		button { -webkit-tap-highlight-color: transparent; }
-		.story-ring { padding: 2px; background: linear-gradient(35deg,#ffb800,#ff5a45 45%,#c135e8 75%,#6554ff); }
-		.hide-scrollbar { scrollbar-width: none; }
-		.hide-scrollbar::-webkit-scrollbar { display: none; }
-		@media (max-width: 767px) { .desktop-nav { display: none; } }
-	</style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axra • Ghana's Instagram</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Grand+Hotel&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>.font-logo{font-family:'Grand Hotel',cursive}.gradient-ring{background:linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5)}.scrollbar-hide::-webkit-scrollbar{display:none}.like-anim{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);opacity:0;transition:.2s;pointer-events:none}.like-anim.show{transform:translate(-50%,-50%) scale(1);opacity:.9}</style>
 </head>
-<body>
-	<div id="root"></div>
-	<script type="text/babel">
-		const { useState } = React;
-		const Icon = ({ type, size = 24, filled = false }) => {
-			const p = {
-				home: <><path d="m3 10 9-7 9 7M5 9v11h14V9M9 20v-7h6v7"/></>,
-				search: <><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></>,
-				explore: <><circle cx="12" cy="12" r="9"/><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1z"/></>,
-				reels: <><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3z"/></>,
-				chat: <><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></>,
-				heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.9-8.6a5.5 5.5 0 0 0-.1-7.8z" fill={filled ? 'currentColor' : 'none'}/>,
-				plus: <><path d="M12 5v14M5 12h14"/></>,
-				comment: <><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></>,
-				send: <><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/></>,
-				save: <path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4z"/>,
-				more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
-				close: <><path d="m18 6-12 12M6 6l12 12"/></>
-			};
-			return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{p[type]}</svg>;
-		};
+<body class="bg-white text-black">
+<div id="auth" class="min-h-screen flex items-center justify-center p-4 bg-[#fafafa]"><div class="w-full max-w-[350px]"><div class="bg-white border border-zinc-300 px-8 py-8 text-center"><h1 class="font-logo text-[50px] mb-6">Axra</h1><input id="username" placeholder="Username" class="w-full bg-zinc-50 border px-2 py-2.5 text-sm mb-2"><input id="password" type="password" placeholder="Password" class="w-full bg-zinc-50 border px-2 py-2.5 text-sm"><button id="loginBtn" class="w-full bg-[#0095f6] text-white py-2 rounded-lg text-sm mt-3 font-semibold">Log in</button><p id="err" class="text-red-500 text-xs mt-2 hidden"></p></div><div class="bg-white border border-zinc-300 mt-2 py-5 text-center text-sm">Don't have account? <button id="signupBtn" class="text-[#0095f6] font-semibold">Sign up</button></div></div></div>
 
-		const people = [
-			{ name: 'Your story', img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=faces', own: true },
-			{ name: 'jessica_w', img: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&h=120&fit=crop&crop=faces' },
-			{ name: 'marco.jpg', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=faces' },
-			{ name: 'sophia.lane', img: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=120&h=120&fit=crop&crop=faces' },
-			{ name: 'theo_travels', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop&crop=faces' },
-			{ name: 'amina.art', img: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=120&h=120&fit=crop&crop=faces' },
-			{ name: 'noahcreates', img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf37732a?w=120&h=120&fit=crop&crop=faces' }
-		];
-		const initialPosts = [
-			{ id: 1, user: 'jessica_w', avatar: people[1].img, place: 'Big Sur, California', photo: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1000&h=1000&fit=crop', caption: 'A little reminder to take the scenic route 🌿', likes: 1284, liked: false, comments: ['This view is everything ✨'] },
-			{ id: 2, user: 'marco.jpg', avatar: people[2].img, place: 'Brooklyn, New York', photo: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=1000&h=1000&fit=crop', caption: 'Golden hour never gets old.', likes: 846, liked: true, comments: ['The colors!'] },
-			{ id: 3, user: 'amina.art', avatar: people[5].img, place: 'Somewhere in the city', photo: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=1000&h=1000&fit=crop', caption: 'Collecting moments, not things ☀️', likes: 2301, liked: false, comments: [] }
-		];
+<div id="app" class="hidden min-h-screen bg-[#fafafa]">
+<div class="flex justify-center">
+<aside class="hidden md:flex fixed left-0 top-0 h-screen w-[244px] bg-white border-r border-zinc-300 flex-col p-3 gap-1 z-30">
+<h1 class="font-logo text-[33px] px-3 py-6">axrachat.</h1>
+<nav class="space-y-1">
+<button data-view="feed" class="navBtn flex items-center gap-4 p-3 hover:bg-zinc-50 rounded-lg w-full text-left"><i class="fa-solid fa-house text-[22px]"></i> Home</button>
+<button class="flex items-center gap-4 p-3 hover:bg-zinc-50 rounded-lg w-full text-left"><i class="fa-solid fa-magnifying-glass text-[22px]"></i> Search</button>
+<button class="flex items-center gap-4 p-3 hover:bg-zinc-50 rounded-lg w-full text-left"><i class="fa-regular fa-compass text-[22px]"></i> Explore</button>
+<button class="flex items-center gap-4 p-3 hover:bg-zinc-50 rounded-lg w-full text-left"><i class="fa-solid fa-clapperboard text-[22px]"></i> Reels</button>
+<button data-view="messages" class="navBtn flex items-center gap-4 p-3 hover:bg-zinc-50 rounded-lg w-full text-left"><i class="fa-regular fa-paper-plane text-[22px]"></i> Messages <span id="msgBadge" class="ml-auto bg-red-500 text-white text-[10px] px-1.5 rounded-full hidden">1</span></button>
+<button class="flex items-center gap-4 p-3 hover:bg-zinc-50 rounded-lg w-full text-left"><i class="fa-regular fa-heart text-[22px]"></i> Notifications</button>
+<button id="createBtnDesktop" class="flex items-center gap-4 p-3 hover:bg-zinc-50 rounded-lg w-full text-left"><i class="fa-regular fa-square-plus text-[22px]"></i> Create</button>
+<button data-view="profile" class="navBtn flex items-center gap-4 p-3 hover:bg-zinc-50 rounded-lg w-full text-left"><img id="sideAvatar" class="w-6 h-6 rounded-full bg-zinc-200"><span id="sideUsername">Profile</span></button>
+</nav>
+<div class="mt-auto p-3"><button id="logoutBtn" class="flex gap-4 items-center text-sm"><i class="fa-solid fa-bars"></i> More</button></div>
+</aside>
 
-		function App() {
-			const [posts, setPosts] = useState(initialPosts);
-			const [saved, setSaved] = useState({});
-			const [comment, setComment] = useState({});
-			const [modal, setModal] = useState(false);
-			const [photo, setPhoto] = useState('');
-			const [caption, setCaption] = useState('');
-			const [notice, setNotice] = useState('');
-			const [active, setActive] = useState('Home');
-			const flash = text => { setNotice(text); window.setTimeout(() => setNotice(''), 2200); };
-			const like = id => setPosts(items => items.map(p => p.id === id ? { ...p, liked: !p.liked, likes: p.likes + (p.liked ? -1 : 1) } : p));
-			const addComment = (event, id) => {
-				event.preventDefault(); const text = (comment[id] || '').trim(); if (!text) return;
-				setPosts(items => items.map(p => p.id === id ? { ...p, comments: [...p.comments, text] } : p));
-				setComment(items => ({ ...items, [id]: '' }));
-			};
-			const share = () => {
-				if (!photo.trim()) return;
-				setPosts(items => [{ id: Date.now(), user: 'alex.morgan', avatar: people[0].img, place: 'Shared with everyone', photo: photo.trim(), caption: caption.trim(), likes: 0, liked: false, comments: [] }, ...items]);
-				setPhoto(''); setCaption(''); setModal(false); flash('Your post has been shared.');
-			};
-			const navigation = [['Home','home'],['Search','search'],['Explore','explore'],['Reels','reels'],['Messages','chat'],['Notifications','heart'],['Create','plus']];
-			return <div className="min-h-screen">
-				<aside className="desktop-nav fixed inset-y-0 left-0 z-20 flex w-[245px] flex-col border-r border-gray-200 bg-white px-3 py-8">
-					<a href="#" className="mb-9 px-3 text-[26px] font-bold tracking-[-1.5px]">axrachat<span className="text-fuchsia-600">.</span></a>
-					<nav className="space-y-1">{navigation.map(([label, icon]) => <button key={label} onClick={() => label === 'Create' ? setModal(true) : setActive(label)} className={`flex w-full items-center gap-4 rounded-lg px-3 py-3 text-left text-[15px] hover:bg-gray-100 ${active === label ? 'font-bold' : ''}`}><Icon type={icon}/>{label}{label === 'Messages' && <span className="ml-auto h-2 w-2 rounded-full bg-fuchsia-600"/>}</button>)}</nav>
-					<button className="mt-2 flex items-center gap-4 rounded-lg px-3 py-3 text-left text-[15px] hover:bg-gray-100"><img src={people[0].img} className="h-6 w-6 rounded-full object-cover"/>Profile</button>
-					<button onClick={() => flash('More options')} className="mt-auto flex items-center gap-4 rounded-lg px-3 py-3 text-left text-[15px] hover:bg-gray-100"><Icon type="more"/>More</button>
-				</aside>
-				<header className="sticky top-0 z-10 flex h-[58px] items-center justify-between border-b border-gray-200 bg-white px-4 md:hidden"><span className="text-[23px] font-bold tracking-[-1px]">axrachat<span className="text-fuchsia-600">.</span></span><div className="flex gap-5"><button onClick={() => setModal(true)} aria-label="Create post"><Icon type="plus"/></button><button onClick={() => setActive('Messages')} aria-label="Messages"><Icon type="chat"/></button></div></header>
-				<main className="mx-auto flex max-w-[1000px] justify-center md:ml-[245px]">
-					<section className="w-full max-w-[630px] pb-20 md:px-5 md:pt-8">
-						<div className="hide-scrollbar mb-4 flex gap-4 overflow-x-auto border-b border-gray-200 bg-white px-4 py-4 md:mb-6 md:gap-5 md:border-0 md:bg-transparent md:px-0 md:py-0">
-							{people.map(person => <button key={person.name} onClick={() => flash(person.own ? 'Add to your story' : `Viewing ${person.name}'s story`)} className="flex w-[66px] shrink-0 flex-col items-center gap-1.5"><span className={`story-ring relative rounded-full ${person.own ? 'bg-gray-200' : ''}`}><img src={person.img} className="h-[58px] w-[58px] rounded-full border-2 border-white object-cover"/>{person.own && <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-blue-500 text-sm font-bold text-white">+</span>}</span><span className="w-[68px] truncate text-center text-[11px] text-gray-700">{person.name}</span></button>)}
-						</div>
-						<div className="space-y-5 md:space-y-6">{posts.map(post => <article key={post.id} className="overflow-hidden border-b border-gray-200 bg-white pb-4 md:rounded-sm md:border md:pb-0">
-							<div className="flex h-[60px] items-center justify-between px-3 md:px-4"><div className="flex items-center gap-3"><img src={post.avatar} className="h-8 w-8 rounded-full object-cover"/><div><div className="flex items-center gap-1 text-[13px] font-semibold">{post.user}<span className="text-blue-500">✓</span></div><div className="text-[11px] text-gray-600">{post.place}</div></div></div><button aria-label="More options" onClick={() => flash('More options')}><Icon type="more" size={22}/></button></div>
-							<div className="aspect-square w-full bg-gray-100"><img src={post.photo} alt={post.caption || 'Photo shared on Axrachat'} className="h-full w-full object-cover" onDoubleClick={() => !post.liked && like(post.id)}/></div>
-							<div className="px-3 pt-2 md:px-4"><div className="flex items-center justify-between"><div className="flex items-center gap-4"><button aria-label={post.liked ? 'Unlike post' : 'Like post'} onClick={() => like(post.id)} className={post.liked ? 'text-red-500' : ''}><Icon type="heart" filled={post.liked}/></button><button aria-label="Comment" onClick={() => document.getElementById(`comment-${post.id}`)?.focus()}><Icon type="comment"/></button><button aria-label="Share" onClick={() => flash('Link copied to clipboard')}><Icon type="send"/></button></div><button aria-label="Save post" onClick={() => setSaved(items => ({ ...items, [post.id]: !items[post.id] }))} className={saved[post.id] ? 'text-fuchsia-600' : ''}><Icon type="save" filled={saved[post.id]}/></button></div>
-								<div className="mt-2 text-[13px] font-semibold">{post.likes.toLocaleString()} likes</div>{post.caption && <p className="mt-1 text-[13px] leading-[19px]"><span className="mr-1 font-semibold">{post.user}</span>{post.caption}</p>}
-								{post.comments.slice(-2).map((text, i) => <p key={i} className="mt-1 text-[13px]"><span className="mr-1 font-semibold">{i ? 'you' : 'friend'}</span>{text}</p>)}<div className="mt-2 text-[10px] tracking-wide text-gray-500">2 HOURS AGO</div>
-							</div>
-							<form onSubmit={event => addComment(event, post.id)} className="mt-3 hidden items-center border-t border-gray-100 px-4 py-3 md:flex"><input id={`comment-${post.id}`} value={comment[post.id] || ''} onChange={event => setComment(items => ({ ...items, [post.id]: event.target.value }))} placeholder="Add a comment..." className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"/><button disabled={!(comment[post.id] || '').trim()} className="text-[13px] font-semibold text-blue-500 disabled:opacity-40">Post</button></form>
-						</article>)}</div>
-					</section>
-					<aside className="hidden w-[320px] shrink-0 pl-8 pt-10 lg:block"><div className="flex items-center gap-3"><img src={people[0].img} className="h-11 w-11 rounded-full object-cover"/><div className="flex-1"><div className="text-[13px] font-semibold">alex.morgan</div><div className="text-[13px] text-gray-500">Alex Morgan</div></div><button onClick={() => flash('You are viewing your profile')} className="text-xs font-semibold text-blue-500">Switch</button></div><div className="mb-4 mt-6 flex justify-between text-[13px]"><span className="font-semibold text-gray-500">Suggestions For You</span><button className="text-xs font-semibold">See All</button></div>{people.slice(3).map(person => <div key={person.name} className="mb-3 flex items-center gap-3"><img src={person.img} className="h-8 w-8 rounded-full object-cover"/><div className="min-w-0 flex-1"><div className="truncate text-xs font-semibold">{person.name}</div><div className="text-[11px] text-gray-500">Suggested for you</div></div><button onClick={() => flash(`Following ${person.name}`)} className="text-xs font-semibold text-blue-500">Follow</button></div>)}<p className="mt-8 text-[11px] leading-5 text-gray-400">About · Help · Press · API · Jobs · Privacy · Terms<br/>Locations · Language · Axrachat © 2025</p></aside>
-				</main>
-				<nav className="fixed inset-x-0 bottom-0 z-20 flex h-[54px] items-center justify-around border-t border-gray-200 bg-white md:hidden">{[['home','Home'],['search','Search'],['plus','Create'],['reels','Reels'],['heart','Notifications']].map(([icon,label]) => <button key={icon} onClick={() => label === 'Create' ? setModal(true) : setActive(label)} aria-label={label}><Icon type={icon} filled={icon === 'home' && active === 'Home'}/></button>)}</nav>
-				{modal && <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4" onClick={event => event.target === event.currentTarget && setModal(false)}><div className="w-full max-w-[440px] overflow-hidden rounded-xl bg-white shadow-2xl"><div className="flex h-12 items-center justify-between border-b px-4"><button onClick={() => setModal(false)} aria-label="Close"><Icon type="close" size={21}/></button><span className="text-sm font-semibold">Create new post</span><button onClick={share} className="text-sm font-semibold text-blue-500">Share</button></div><div className="p-6"><div className="mb-5 flex h-44 items-center justify-center overflow-hidden rounded-lg bg-gray-50">{photo ? <img src={photo} alt="Post preview" className="h-full w-full object-cover"/> : <p className="text-lg text-gray-600">Add a photo to get started</p>}</div><label className="mb-1 block text-xs font-semibold text-gray-600">Photo URL</label><input value={photo} onChange={event => setPhoto(event.target.value)} placeholder="https://example.com/photo.jpg" className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"/><label className="mb-1 block text-xs font-semibold text-gray-600">Caption</label><textarea value={caption} onChange={event => setCaption(event.target.value)} placeholder="Write a caption..." rows="3" className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"/></div></div></div>}
-				{notice && <div role="status" className="fixed bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full bg-gray-900 px-5 py-3 text-sm text-white shadow-lg md:bottom-6">{notice}</div>}
-			</div>;
-		}
-		ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-	</script>
+<main class="w-full max-w-[630px] md:ml-[244px] xl:mr-[319px] bg-[#fafafa]">
+<div id="feedView">
+<div class="bg-white border-b md:border border-zinc-300 md:rounded-lg md:mt-6">
+<div class="flex gap-4 p-4 overflow-x-auto scrollbar-hide">
+<div id="yourStoryBtn" class="flex flex-col items-center gap-1 min-w-[66px] cursor-pointer"><div class="w-[66px] h-[66px] rounded-full bg-zinc-100 flex items-center justify-center border-2 border-dashed relative"><img id="yourStoryAvatar" class="w-full h-full rounded-full object-cover hidden"><i id="yourStoryPlus" class="fa-solid fa-plus"></i><div class="absolute -bottom-1 -right-1 bg-[#0095f6] w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white"><i class="fa-solid fa-plus"></i></div></div><span class="text-xs">Your story</span></div>
+<div id="storiesRow" class="flex gap-4"></div>
+</div>
+</div>
+<div id="feed" class="pb-20"><div id="loadingFeed" class="text-center py-20 text-zinc-500">Loading feed...</div></div>
+</div>
+
+<div id="profileView" class="hidden bg-white md:border border-zinc-300 md:rounded-lg md:mt-6 pb-20">
+<div class="p-8 border-b">
+<div class="flex gap-10">
+<img id="profileAvatar" class="w-[77px] h-[77px] md:w-[150px] md:h-[150px] rounded-full bg-zinc-200 object-cover cursor-pointer">
+<div class="flex-1"><div class="flex gap-3 items-center mb-4"><h2 id="profileUsername" class="text-xl font-light"></h2><button id="editProfileBtn" class="bg-zinc-100 px-4 py-1.5 rounded-lg text-sm font-semibold">Edit profile</button></div><div class="hidden md:flex gap-8 mb-4"><span><b id="postsCount">0</b> posts</span><span><b id="followersCount">0</b> followers</span><span><b id="followingCount">0</b> following</span></div><div class="text-sm"><div id="profileFullName" class="font-semibold"></div><div id="profileBio" class="whitespace-pre-wrap"></div></div></div>
+</div>
+</div>
+<div class="flex justify-center gap-12 border-t text-xs tracking-widest"><button class="py-3 border-t border-black font-semibold">POSTS</button></div>
+<div id="profileGrid" class="grid grid-cols-3 gap-1"></div>
+</div>
+
+<div id="messagesView" class="hidden bg-white md:border border-zinc-300 md:rounded-lg md:mt-6 h-[calc(100vh-60px)] md:h-[80vh] flex">
+<div id="convList" class="w-full md:w-[350px] border-r flex flex-col">
+<div class="p-4 border-b flex justify-between"><h2 id="msgUsername" class="font-semibold"></h2><button id="newMsgBtn"><i class="fa-regular fa-pen-to-square"></i></button></div>
+<div id="conversations" class="flex-1 overflow-auto"></div>
+</div>
+<div id="chatWindow" class="hidden flex-1 flex-col">
+<div class="p-4 border-b flex items-center gap-3"><button id="backToList" class="md:hidden"><i class="fa-solid fa-arrow-left"></i></button><img id="chatAvatar" class="w-8 h-8 rounded-full bg-zinc-200"><span id="chatName" class="font-semibold text-sm"></span></div>
+<div id="chatMessages" class="flex-1 overflow-auto p-4 space-y-2"></div>
+<div class="p-3 border-t flex gap-2"><input id="chatInput" placeholder="Message..." class="flex-1 border rounded-full px-4 py-2 text-sm outline-none"><button id="sendMsgBtn" class="text-[#0095f6] font-semibold text-sm">Send</button></div>
+</div>
+<div id="emptyChat" class="hidden md:flex flex-1 items-center justify-center flex-col p-8 text-center"><div class="w-24 h-24 rounded-full border-2 flex items-center justify-center mb-4 text-3xl"><i class="fa-regular fa-paper-plane"></i></div><h2 class="text-xl font-light">Your messages</h2><p class="text-sm text-zinc-500">Send private messages</p></div>
+</div>
+
+</main>
+
+<aside class="hidden xl:block fixed right-0 top-0 h-screen w-[319px] p-6 bg-[#fafafa]">
+<div class="flex items-center gap-3"><img id="rightAvatar" class="w-14 h-14 rounded-full bg-zinc-200"><div><div id="rightUsername" class="font-semibold text-sm"></div><div id="rightFullname" class="text-zinc-500 text-sm"></div></div><button id="switchBtn" class="ml-auto text-[#0095f6] text-xs font-semibold">Switch</button></div>
+<div class="mt-6 text-sm text-zinc-500 font-semibold">Suggested for you</div>
+<div id="suggested" class="mt-3 space-y-3"></div>
+</aside>
+</div>
+</div>
+
+<!-- Modals -->
+<div id="createModal" class="fixed inset-0 z-[100] bg-black/70 hidden items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-[700px] overflow-hidden"><div class="flex justify-between p-3 border-b"><button id="closeModal">X</button><span class="font-semibold">Create new post</span><button id="shareBtn" class="text-[#0095f6] font-semibold">Share</button></div><div class="flex flex-col md:flex-row"><div class="flex-1 bg-zinc-50 min-h-[400px] flex items-center justify-center"><div id="uploadArea" class="text-center p-8"><i class="fa-regular fa-images text-6xl mb-4"></i><p class="mb-4">Drag photos here</p><label class="bg-[#0095f6] text-white px-4 py-1.5 rounded-lg text-sm cursor-pointer">Select <input id="fileInput" type="file" accept="image/*,video/*" class="hidden"></label></div><img id="previewImg" class="hidden w-full h-full object-contain"></div><div class="w-full md:w-[300px] p-4"><textarea id="captionInput" placeholder="Write a caption..." class="w-full h-32 outline-none text-sm"></textarea></div></div></div></div>
+
+<div id="storyViewer" class="fixed inset-0 z-[200] bg-black hidden flex-col text-white"><div class="w-full max-w-[500px] mx-auto h-full flex flex-col"><div id="storyProgress" class="flex gap-1 p-2"></div><div class="flex justify-between p-4"><div class="flex gap-2 items-center"><img id="storyUserAvatar" class="w-8 h-8 rounded-full"><span id="storyUserName" class="font-semibold text-sm"></span></div><button id="closeStory">X</button></div><img id="storyImage" class="flex-1 object-contain"><button id="storyPrev" class="absolute left-0 top-0 bottom-0 w-1/2"></button><button id="storyNext" class="absolute right-0 top-0 bottom-0 w-1/2"></button></div></div>
+
+<div id="editModal" class="fixed inset-0 z-[100] bg-black/50 hidden items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-[400px] p-6"><h2 class="font-semibold mb-4">Edit profile</h2><div class="flex gap-3 items-center mb-4"><img id="editAvatarPreview" class="w-14 h-14 rounded-full bg-zinc-200"><button id="changeAvatarBtn" class="text-[#0095f6] text-sm">Change photo</button><input id="editAvatarInput" type="file" accept="image/*" class="hidden"></div><input id="editFullName" placeholder="Full Name" class="w-full border rounded p-2 text-sm mb-2"><textarea id="editBio" placeholder="Bio" class="w-full border rounded p-2 text-sm mb-2 h-20"></textarea><input id="editWebsite" placeholder="Website" class="w-full border rounded p-2 text-sm mb-4"><button id="saveProfileBtn" class="w-full bg-[#0095f6] text-white py-2 rounded-lg text-sm font-semibold">Save</button><button id="closeEdit" class="w-full mt-2 text-sm">Cancel</button></div></div>
+
+<script>
+const API=location.origin;let token=localStorage.getItem('axra_token');let currentUser=JSON.parse(localStorage.getItem('axra_user')||'null');let currentView='feed';let selectedChatUser=null;let storiesData=[];let currentStoryUserIndex=0;let currentStoryIndex=0;let selectedFile=null;let editAvatarFile=null;const socket=io(API);const $=s=>document.querySelector(s);
+function showAuth(){if(token&&currentUser){$('#auth').classList.add('hidden');$('#app').classList.remove('hidden');initApp();return;}$('#auth').classList.remove('hidden');$('#app').classList.add('hidden');}showAuth();
+async function doAuth(isLogin){
+ const u=$('#username').value.trim();const p=$('#password').value.trim();if(!u||!p){$('#err').textContent='Enter username & password';$('#err').classList.remove('hidden');return;}
+ try{const url=isLogin?'/api/auth/login':'/api/auth/register';const body={username:u,password:p,fullName:u};const res=await fetch(API+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await res.json();if(!res.ok) throw new Error(data.error);token=data.token;currentUser=data.user;localStorage.setItem('axra_token',token);localStorage.setItem('axra_user',JSON.stringify(currentUser));showAuth();}catch(e){$('#err').textContent=e.message;$('#err').classList.remove('hidden');}
+}
+$('#loginBtn').onclick=()=>doAuth(true);$('#signupBtn').onclick=()=>doAuth(false);
+function switchView(v){currentView=v;$('#feedView').classList.toggle('hidden',v!=='feed');$('#profileView').classList.toggle('hidden',v!=='profile');$('#messagesView').classList.toggle('hidden',v!=='messages');if(v==='profile')loadProfile(currentUser.username);if(v==='messages'){loadConversations();$('#emptyChat').classList.toggle('hidden',!!selectedChatUser);}}
+document.querySelectorAll('.navBtn').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+function initApp(){const av=currentUser.avatar||`https://i.pravatar.cc/150?u=${currentUser.username}`;['#sideAvatar','#rightAvatar','#profileAvatar','#editAvatarPreview','#yourStoryAvatar'].forEach(s=>{const el=$(s);if(el){el.src=av;if(s==='#yourStoryAvatar'){el.classList.remove('hidden');$('#yourStoryPlus').classList.add('hidden');}}});$('#sideUsername').textContent=currentUser.username;$('#rightUsername').textContent=currentUser.username;$('#rightFullname').textContent=currentUser.fullName||currentUser.username;$('#profileUsername').textContent=currentUser.username;$('#msgUsername').textContent=currentUser.username;socket.emit('join',currentUser.username);loadFeed();loadStories();}
+async function loadFeed(){try{const res=await fetch(API+'/api/posts');const posts=await res.json();$('#loadingFeed')?.remove();const feed=$('#feed');feed.innerHTML='';if(!posts.length){feed.innerHTML='<div class="text-center py-20 text-zinc-500">No posts yet</div>';return;}posts.forEach(p=>feed.appendChild(renderPost(p)));}catch{}}
+function renderPost(p){const div=document.createElement('div');div.className='bg-white border border-zinc-300 md:rounded-lg mb-4';const isLiked=p.likes?.includes(currentUser._id);div.innerHTML=`<div class="flex items-center justify-between p-3"><div class="flex gap-3 items-center"><div class="gradient-ring p-[2px] rounded-full"><img src="${p.userAvatar||''}" class="w-8 h-8 rounded-full border-2 border-white bg-zinc-200"></div><span class="font-semibold text-sm">${p.username}</span></div><i class="fa-solid fa-ellipsis"></i></div><div class="relative bg-zinc-100 aspect-square overflow-hidden"><img src="${p.image}" class="w-full h-full object-cover"><div class="like-anim text-white text-[80px]"><i class="fa-solid fa-heart"></i></div></div><div class="p-3"><div class="flex justify-between text-[22px] mb-2"><div class="flex gap-4"><button class="likeBtn ${isLiked?'text-red-500':''}"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i></button><button><i class="fa-regular fa-comment"></i></button><button class="dmBtn"><i class="fa-regular fa-paper-plane"></i></button></div><i class="fa-regular fa-bookmark"></i></div><div class="font-semibold text-sm">${p.likes?.length||0} likes</div><div class="text-sm"><b>${p.username}</b> ${p.caption||''}</div><div class="commentsList mt-1 text-sm"></div><div class="flex gap-2 mt-2 border-t pt-2"><input placeholder="Add a comment..." class="commentInput flex-1 text-sm outline-none"><button class="postCommentBtn text-[#0095f6] text-sm font-semibold">Post</button></div></div>`;const likeBtn=div.querySelector('.likeBtn');likeBtn.onclick=async()=>{const liked=likeBtn.classList.contains('text-red-500');likeBtn.classList.toggle('text-red-500',!liked);likeBtn.innerHTML=`<i class="${!liked?'fa-solid':'fa-regular'} fa-heart"></i>`;try{await fetch(API+`/api/posts/${p._id}/like`,{method:'POST',headers:{'Authorization':`Bearer ${token}`}});}catch{}};const media=div.querySelector('.relative');let last=0;media.onclick=()=>{const now=Date.now();if(now-last<300){const anim=div.querySelector('.like-anim');anim.classList.add('show');setTimeout(()=>anim.classList.remove('show'),800);if(!likeBtn.classList.contains('text-red-500'))likeBtn.click();}last=now;};const cl=div.querySelector('.commentsList');const rc=l=>{cl.innerHTML=(l||[]).map(c=>`<div><b>${c.username}</b> ${c.text}</div>`).join('');};rc(p.comments);const pc=async()=>{const inp=div.querySelector('.commentInput');const t=inp.value.trim();if(!t)return;try{const r=await fetch(API+`/api/posts/${p._id}/comment`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({text:t})});const up=await r.json();rc(up.comments);inp.value='';}catch{}};div.querySelector('.postCommentBtn').onclick=pc;div.querySelector('.commentInput').onkeydown=e=>{if(e.key==='Enter')pc();};div.querySelector('.dmBtn').onclick=()=>switchView('messages');return div;}
+async function loadStories(){try{const res=await fetch(API+'/api/stories');storiesData=await res.json();const row=$('#storiesRow');row.innerHTML='';storiesData.forEach((g,i)=>{const latest=g.stories[g.stories.length-1];const el=document.createElement('div');el.className='flex flex-col items-center gap-1 min-w-[66px] cursor-pointer';el.innerHTML=`<div class="gradient-ring p-[2px] rounded-full"><img src="${g.userAvatar}" class="w-[60px] h-[60px] rounded-full border-2 border-white object-cover"></div><span class="text-xs truncate w-[64px] text-center">${g.username}</span>`;el.onclick=()=>openStory(i,0);row.appendChild(el);});}catch{}}
+function openStory(ui,si){currentStoryUserIndex=ui;currentStoryIndex=si;const group=storiesData[ui];if(!group)return;const story=group.stories[si];$('#storyViewer').classList.remove('hidden');$('#storyViewer').classList.add('flex');$('#storyUserAvatar').src=group.userAvatar;$('#storyUserName').textContent=group.username;$('#storyImage').src=story.image;fetch(API+`/api/stories/${story._id}/view`,{method:'POST',headers:{'Authorization':`Bearer ${token}`}});setTimeout(()=>nextStory(),4000);}
+function nextStory(){const g=storiesData[currentStoryUserIndex];if(currentStoryIndex+1<g.stories.length)openStory(currentStoryUserIndex,currentStoryIndex+1);else if(currentStoryUserIndex+1<storiesData.length)openStory(currentStoryUserIndex+1,0);else closeStory();}
+function closeStory(){$('#storyViewer').classList.add('hidden');$('#storyViewer').classList.remove('flex');loadStories();}
+$('#closeStory').onclick=closeStory;$('#storyNext').onclick=nextStory;$('#storyPrev').onclick=()=>{if(currentStoryIndex>0)openStory(currentStoryUserIndex,currentStoryIndex-1);};
+$('#yourStoryBtn').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=async e=>{const file=e.target.files[0];if(!file)return;const fd=new FormData();fd.append('image',file);try{const res=await fetch(API+'/api/stories',{method:'POST',headers:{'Authorization':`Bearer ${token}`},body:fd});if(res.ok)loadStories();}catch{}};inp.click();};
+async function loadProfile(username){try{const res=await fetch(API+`/api/profile/${username}`);const data=await res.json();if(!res.ok)return;$('#profileAvatar').src=data.avatar;$('#profileUsername').textContent=data.username;$('#profileFullName').textContent=data.fullName||'';$('#profileBio').textContent=data.bio||'';$('#postsCount').textContent=data.postsCount;$('#followersCount').textContent=data.followersCount;$('#followingCount').textContent=data.followingCount;const grid=$('#profileGrid');grid.innerHTML='';data.posts.forEach(p=>{const d=document.createElement('div');d.className='aspect-square bg-zinc-100 overflow-hidden';d.innerHTML=`<img src="${p.image}" class="w-full h-full object-cover">`;grid.appendChild(d);});}catch{}}
+$('#editProfileBtn').onclick=()=>{$('#editModal').classList.remove('hidden');$('#editModal').classList.add('flex');$('#editFullName').value=currentUser.fullName||'';$('#editBio').value=currentUser.bio||'';$('#editWebsite').value=currentUser.website||'';$('#editAvatarPreview').src=currentUser.avatar;};
+$('#closeEdit').onclick=()=>{$('#editModal').classList.add('hidden');$('#editModal').classList.remove('flex');};
+$('#changeAvatarBtn').onclick=()=>$('#editAvatarInput').click();
+$('#editAvatarInput').onchange=e=>{editAvatarFile=e.target.files[0];if(editAvatarFile)$('#editAvatarPreview').src=URL.createObjectURL(editAvatarFile);};
+$('#saveProfileBtn').onclick=async()=>{const fd=new FormData();fd.append('fullName',$('#editFullName').value);fd.append('bio',$('#editBio').value);fd.append('website',$('#editWebsite').value);if(editAvatarFile)fd.append('avatar',editAvatarFile);try{const res=await fetch(API+'/api/profile',{method:'PUT',headers:{'Authorization':`Bearer ${token}`},body:fd});const data=await res.json();currentUser={...currentUser,...data};localStorage.setItem('axra_user',JSON.stringify(currentUser));initApp();$('#editModal').classList.add('hidden');$('#editModal').classList.remove('flex');loadProfile(currentUser.username);}catch{}};
+function loadConversations(){const convs=JSON.parse(localStorage.getItem('axra_conversations')||'[]');const defaults=['kwame_gh','ama.love','kojo_beats'];const all=[...new Set([...convs,...defaults])];const list=$('#conversations');list.innerHTML='';all.forEach(name=>{if(name===currentUser.username)return;const div=document.createElement('div');div.className='flex items-center gap-3 p-3 hover:bg-zinc-50 cursor-pointer border-b';div.innerHTML=`<img src="https://i.pravatar.cc/150?u=${name}" class="w-14 h-14 rounded-full"><div><div class="font-semibold text-sm">${name}</div><div class="text-xs text-zinc-500">Tap to chat 🇬🇭</div></div>`;div.onclick=()=>openChat(name);list.appendChild(div);});}
+function openChat(name){selectedChatUser=name;$('#emptyChat').classList.add('hidden');$('#chatWindow').classList.remove('hidden');$('#chatWindow').classList.add('flex');$('#convList').classList.add('hidden');$('#convList').classList.add('md:flex');$('#chatName').textContent=name;$('#chatAvatar').src=`https://i.pravatar.cc/150?u=${name}`;loadChat(name);const arr=JSON.parse(localStorage.getItem('axra_conversations')||'[]');if(!arr.includes(name)){arr.push(name);localStorage.setItem('axra_conversations',JSON.stringify(arr));}}
+async function loadChat(other){const box=$('#chatMessages');box.innerHTML='Loading...';try{const res=await fetch(API+`/api/messages/${other}`,{headers:{'Authorization':`Bearer ${token}`}});const msgs=await res.json();box.innerHTML='';msgs.forEach(m=>{const isMe=m.sender===currentUser.username;const d=document.createElement('div');d.className=`flex ${isMe?'justify-end':'justify-start'}`;d.innerHTML=`<div class="${isMe?'bg-[#0095f6] text-white':'bg-zinc-100'} px-3 py-2 rounded-2xl max-w-[70%] text-sm">${m.text}</div>`;box.appendChild(d);});box.scrollTop=box.scrollHeight;}catch{box.innerHTML='<div class="text-center text-zinc-500 text-xs py-10">No messages yet. Say hi! 🇬🇭</div>';}}
+async function sendMsg(){const t=$('#chatInput').value.trim();if(!t||!selectedChatUser)return;const payload={sender:currentUser.username,receiver:selectedChatUser,text:t};const box=$('#chatMessages');const d=document.createElement('div');d.className='flex justify-end';d.innerHTML=`<div class="bg-[#0095f6] text-white px-3 py-2 rounded-2xl max-w-[70%] text-sm">${t}</div>`;box.appendChild(d);box.scrollTop=box.scrollHeight;$('#chatInput').value='';socket.emit('sendMessage',payload);}
+$('#sendMsgBtn').onclick=sendMsg;$('#chatInput').onkeydown=e=>{if(e.key==='Enter')sendMsg();};
+$('#backToList').onclick=()=>{$('#chatWindow').classList.add('hidden');$('#convList').classList.remove('hidden');$('#convList').classList.add('flex');selectedChatUser=null;};
+$('#newMsgBtn').onclick=()=>{const n=prompt('Username to message:');if(n)openChat(n.toLowerCase());};
+socket.on('receiveMessage',msg=>{if(selectedChatUser&&(msg.sender===selectedChatUser||msg.receiver===selectedChatUser)){const box=$('#chatMessages');const isMe=msg.sender===currentUser.username;if(!isMe){const d=document.createElement('div');d.className='flex justify-start';d.innerHTML=`<div class="bg-zinc-100 px-3 py-2 rounded-2xl max-w-[70%] text-sm">${msg.text}</div>`;box.appendChild(d);box.scrollTop=box.scrollHeight;}}else{$('#msgBadge').classList.remove('hidden');}});
+socket.on('newPost',()=>{if(currentView==='feed')loadFeed();});socket.on('newStory',()=>loadStories());
+function openCreate(){ $('#createModal').classList.remove('hidden'); $('#createModal').classList.add('flex'); }
+function closeCreate(){ $('#createModal').classList.add('hidden'); $('#createModal').classList.remove('flex'); $('#previewImg').classList.add('hidden'); $('#uploadArea').classList.remove('hidden'); selectedFile=null; }
+$('#createBtnDesktop').onclick=openCreate; $('#closeModal').onclick=closeCreate;
+$('#fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;selectedFile=f;$('#uploadArea').classList.add('hidden');$('#previewImg').src=URL.createObjectURL(f);$('#previewImg').classList.remove('hidden');};
+$('#shareBtn').onclick=async()=>{if(!selectedFile&&!$('#captionInput').value)return;$('#shareBtn').textContent='Sharing...';try{const fd=new FormData();if(selectedFile)fd.append('image',selectedFile);fd.append('caption',$('#captionInput').value);const res=await fetch(API+'/api/posts',{method:'POST',headers:{'Authorization':`Bearer ${token}`},body:fd});if(res.ok){closeCreate();loadFeed();switchView('feed');}}catch{}finally{$('#shareBtn').textContent='Share';}};
+$('#logoutBtn').onclick=$('#switchBtn').onclick=()=>{localStorage.clear();location.reload();};
+</script>
 </body>
 </html>
