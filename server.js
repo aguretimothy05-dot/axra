@@ -1,173 +1,359 @@
-// Axrachat - Complete Backend Server - Render Ready
-require('dotenv').config();
+/**
+ * AXRA V2 - Full Backend with Profiles, Stories, Posts, Reels
+ * Ghana's Instagram - Built by Timm
+ * Requirements: MONGODB_URI, JWT_SECRET, CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+ */
+
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const cors = require('cors');
 const fs = require('fs');
-const { v2: cloudinary } = require('cloudinary');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const http = require('http');
+const { Server } = require('socket.io');
+const cloudinary = require('cloudinary').v2;
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: '*' } });
 
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'axrachat_super_secret_2026';
-const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/axrachat';
+const PORT = process.env.PORT || 10000;
+const JWT_SECRET = process.env.JWT_SECRET || 'axra_secret_ghana_2026';
 
-// Ensure uploads dir exists
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-const uploadsDir2 = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir2)) fs.mkdirSync(uploadsDir2, { recursive: true });
+// Cloudinary Config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-// Cloudinary Setup - Optional
-let upload;
-if (process.env.CLOUDINARY_CLOUD_NAME) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-  const storage = new CloudinaryStorage({
-    cloudinary,
-    params: { folder: 'axrachat', resource_type: 'auto', allowed_formats: ['jpg','png','jpeg','gif','mp4'] }
-  });
-  upload = multer({ storage });
-  console.log('Using Cloudinary');
-} else {
-  const storage = multer.diskStorage({
-    destination: (req,file,cb) => cb(null, uploadsDir2),
-    filename: (req,file,cb) => cb(null, Date.now()+path.extname(file.originalname))
-  });
-  upload = multer({ storage });
-}
-
+// Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(uploadsDir2));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-let useMemoryDB = true;
-const memoryDB = { users: [], posts: [], stories: [], messages: [] };
+// Ensure public folder exists
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+app.use(express.static(publicDir));
 
-mongoose.connect(MONGO_URI).then(() => {
-  useMemoryDB = false;
-  console.log('MongoDB Connected');
-}).catch(() => console.log('Using in-memory DB - Mongo not connected'));
+// MongoDB Connect
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('✅ MongoDB Connected - Axra V2'))
+  .catch(err => console.error('❌ MongoDB Error:', err));
 
-// Models
+// Multer setup (memory storage for Cloudinary)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+// Helper: Upload to Cloudinary
+function uploadToCloudinary(fileBuffer, folder = 'axra') {
+  return new Promise((resolve, reject) => {
+    if (!process.env.CLOUDINARY_CLOUD_NAME) {
+      // Fallback: save locally if no Cloudinary
+      const filename = Date.now() + '-' + Math.random().toString(36).substring(7) + '.jpg';
+      const filepath = path.join(publicDir, 'uploads', filename);
+      if (!fs.existsSync(path.join(publicDir, 'uploads'))) fs.mkdirSync(path.join(publicDir, 'uploads'), { recursive: true });
+      fs.writeFileSync(filepath, fileBuffer);
+      return resolve({ secure_url: `/uploads/${filename}` });
+    }
+    const stream = cloudinary.uploader.upload_stream({ folder, resource_type: 'auto' }, (err, result) => {
+      if (err) reject(err); else resolve(result);
+    });
+    stream.end(fileBuffer);
+  });
+}
+
+// ===== SCHEMAS =====
 const UserSchema = new mongoose.Schema({
-  username: { unique: true, type: String },
-  email: String, password: String, fullName: String,
-  bio: { type: String, default: '' },
-  avatar: String, followers: [], following: [],
-  createdAt: { type: Date, default: Date.now }
-});
+  username: { type: String, unique: true, required: true, lowercase: true, trim: true },
+  password: { type: String, required: true },
+  fullName: { type: String, default: '' },
+  email: { type: String, default: '' },
+  bio: { type: String, default: '🇬🇭 Ghana • Axra user' },
+  website: { type: String, default: '' },
+  avatar: { type: String, default: '' },
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+}, { timestamps: true });
+
 const PostSchema = new mongoose.Schema({
-  user: String, username: String, userAvatar: String,
-  image: String, caption: String,
-  likes: [], comments: [], createdAt: { type: Date, default: Date.now }
-});
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  username: String,
+  userAvatar: String,
+  image: String,
+  caption: String,
+  location: String,
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  comments: [{ username: String, userAvatar: String, text: String, createdAt: { type: Date, default: Date.now } }],
+  filter: { type: String, default: 'normal' },
+}, { timestamps: true });
+
+const StorySchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  username: String,
+  userAvatar: String,
+  image: String,
+  viewedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  expiresAt: { type: Date, default: () => new Date(Date.now() + 24*60*60*1000), index: { expires: '24h' } },
+}, { timestamps: true });
+
+const MessageSchema = new mongoose.Schema({
+  sender: String,
+  receiver: String,
+  text: String,
+}, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);
 const Post = mongoose.model('Post', PostSchema);
+const Story = mongoose.model('Story', StorySchema);
+const Message = mongoose.model('Message', MessageSchema);
 
-const auth = (req,res,next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if(!token) return res.status(401).json({error:'No token'});
-  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
-  catch { res.status(401).json({error:'Invalid'}); }
-};
-
-// AUTH
-app.post('/api/auth/register', async (req,res) => {
-  const { username, email, password, fullName } = req.body;
-  const hashed = await bcrypt.hash(password, 10);
-  if(useMemoryDB){
-    if(memoryDB.users.find(u=>u.username===username)) return res.status(400).json({error:'Taken'});
-    const user = { _id: Date.now().toString(), username, email, password: hashed, fullName, avatar: `https://i.pravatar.cc/150?u=${username}`, followers:[], following:[] };
-    memoryDB.users.push(user);
-    const token = jwt.sign({id:user._id, username}, JWT_SECRET);
-    return res.json({ token, user });
-  }
+// Auth Middleware
+function authMiddleware(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: 'No token' });
+  const token = header.split(' ')[1];
   try {
-    const user = await User.create({ username, email, password: hashed, fullName });
-    const token = jwt.sign({id:user._id, username}, JWT_SECRET);
-    res.json({ token, user });
-  } catch(e){ res.status(400).json({error:'Username taken'}); }
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.id;
+    req.username = decoded.username;
+    next();
+  } catch { return res.status(401).json({ error: 'Invalid token' }); }
+}
+
+// ===== AUTH ROUTES =====
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password, fullName, email } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username & password required' });
+    const exists = await User.findOne({ username: username.toLowerCase() });
+    if (exists) return res.status(400).json({ error: 'Username taken' });
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      username: username.toLowerCase().trim(),
+      password: hashed,
+      fullName: fullName || username,
+      email: email || '',
+      avatar: `https://i.pravatar.cc/300?u=${username.toLowerCase()}`,
+    });
+    const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, user: { _id: user._id, username: user.username, fullName: user.fullName, avatar: user.avatar, bio: user.bio, website: user.website, email: user.email } });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/auth/login', async (req,res) => {
-  const { username, password } = req.body;
-  let user = useMemoryDB ? memoryDB.users.find(u=>u.username===username) : await User.findOne({username});
-  if(!user) return res.status(400).json({error:'Not found'});
-  const ok = await bcrypt.compare(password, user.password);
-  if(!ok) return res.status(400).json({error:'Wrong password'});
-  const token = jwt.sign({id:user._id, username:user.username}, JWT_SECRET);
-  res.json({ token, user });
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username: username.toLowerCase() });
+    if (!user) return res.status(400).json({ error: 'User not found' });
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(400).json({ error: 'Wrong password' });
+    const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, user: { _id: user._id, username: user.username, fullName: user.fullName, avatar: user.avatar, bio: user.bio, website: user.website, email: user.email } });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POSTS
-app.get('/api/posts', async (req,res) => {
-  if(useMemoryDB) return res.json(memoryDB.posts.slice().reverse());
-  res.json(await Post.find().sort({createdAt:-1}).limit(50));
+// ===== PROFILE ROUTES =====
+app.get('/api/profile/:username', async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username.toLowerCase() });
+    if (!user) return res.status(404).json({ error: 'Not found' });
+    const posts = await Post.find({ userId: user._id }).sort({ createdAt: -1 });
+    res.json({
+      _id: user._id,
+      username: user.username,
+      fullName: user.fullName,
+      avatar: user.avatar,
+      bio: user.bio,
+      website: user.website,
+      followersCount: user.followers.length,
+      followingCount: user.following.length,
+      postsCount: posts.length,
+      posts,
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/posts', auth, upload.single('image'), async (req,res) => {
-  const image = req.file ? (req.file.path || `/uploads/${req.file.filename}`) : req.body.image || `https://picsum.photos/600/600?random=${Date.now()}`;
-  const post = { _id: Date.now().toString(), username: req.user.username, userAvatar: `https://i.pravatar.cc/150?u=${req.user.username}`, image, caption: req.body.caption, likes:[], comments:[], createdAt: new Date() };
-  if(useMemoryDB) memoryDB.posts.push(post); else await Post.create(post);
-  io.emit('newPost', post);
-  res.json(post);
+app.put('/api/profile', authMiddleware, upload.single('avatar'), async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const { fullName, bio, website } = req.body;
+    if (fullName) user.fullName = fullName;
+    if (bio) user.bio = bio;
+    if (website !== undefined) user.website = website;
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer, 'axra/avatars');
+      user.avatar = result.secure_url;
+    }
+    await user.save();
+    res.json({ _id: user._id, username: user.username, fullName: user.fullName, avatar: user.avatar, bio: user.bio, website: user.website, email: user.email });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/posts/:id/like', auth, async (req,res) => {
-  if(useMemoryDB){
-    const post = memoryDB.posts.find(p=>p._id===req.params.id);
-    if(!post) return res.status(404).json({error:'Not found'});
-    const i = post.likes.indexOf(req.user.id);
-    if(i>-1) post.likes.splice(i,1); else post.likes.push(req.user.id);
-    io.emit('likeUpdate', {postId: post._id, likes: post.likes});
-    return res.json(post);
-  } else {
+// Follow / Unfollow
+app.post('/api/profile/:username/follow', authMiddleware, async (req, res) => {
+  try {
+    const target = await User.findOne({ username: req.params.username.toLowerCase() });
+    const me = await User.findById(req.userId);
+    if (!target || !me) return res.status(404).json({ error: 'User not found' });
+    if (target._id.equals(me._id)) return res.status(400).json({ error: "Can't follow yourself" });
+    const isFollowing = me.following.includes(target._id);
+    if (isFollowing) {
+      me.following.pull(target._id); target.followers.pull(me._id);
+    } else {
+      me.following.push(target._id); target.followers.push(me._id);
+    }
+    await me.save(); await target.save();
+    res.json({ following: !isFollowing, followersCount: target.followers.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== POSTS ROUTES =====
+app.get('/api/posts', async (req, res) => {
+  try {
+    const posts = await Post.find().sort({ createdAt: -1 }).limit(100);
+    res.json(posts);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/posts', authMiddleware, upload.single('image'), async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const { caption, location, filter } = req.body;
+    let imageUrl = '';
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer, 'axra/posts');
+      imageUrl = result.secure_url;
+    }
+    if (!imageUrl && !caption) return res.status(400).json({ error: 'Image or caption required' });
+    const post = await Post.create({
+      userId: user._id,
+      username: user.username,
+      userAvatar: user.avatar,
+      image: imageUrl,
+      caption: caption || '',
+      location: location || '',
+      filter: filter || 'normal',
+      likes: [],
+      comments: [],
+    });
+    io.emit('newPost', post);
+    res.json(post);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/posts/:id/like', authMiddleware, async (req, res) => {
+  try {
     const post = await Post.findById(req.params.id);
-    const idx = post.likes.indexOf(req.user.id);
-    if(idx>-1) post.likes.splice(idx,1); else post.likes.push(req.user.id);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    const idx = post.likes.findIndex(id => id.toString() === req.userId);
+    if (idx > -1) post.likes.splice(idx, 1); else post.likes.push(req.userId);
     await post.save();
-    io.emit('likeUpdate', {postId: post._id, likes: post.likes});
-    return res.json(post);
-  }
+    io.emit('likeUpdate', { postId: post._id, likes: post.likes });
+    res.json(post);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/posts/:id/comment', auth, async (req,res) => {
-  if(useMemoryDB){
-    const post = memoryDB.posts.find(p=>p._id===req.params.id);
-    post.comments.push({ username: req.user.username, text: req.body.text, createdAt: new Date() });
-    io.emit('commentUpdate', post);
-    return res.json(post);
-  } else {
+app.post('/api/posts/:id/comment', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
     const post = await Post.findById(req.params.id);
-    post.comments.push({ username: req.user.username, text: req.body.text });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    const comment = { username: user.username, userAvatar: user.avatar, text: req.body.text };
+    post.comments.push(comment);
     await post.save();
-    io.emit('commentUpdate', post);
-    return res.json(post);
-  }
+    io.emit('commentUpdate', { postId: post._id, comments: post.comments });
+    res.json(post);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-io.on('connection', (socket) => {
-  socket.on('sendMessage', (data) => {
-    memoryDB.messages.push(data);
-    io.emit('receiveMessage', data);
+app.delete('/api/posts/:id', authMiddleware, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: 'Not found' });
+    if (post.userId.toString() !== req.userId) return res.status(403).json({ error: 'Not yours' });
+    await Post.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== STORIES ROUTES - NEW =====
+app.get('/api/stories', async (req, res) => {
+  try {
+    // Only non-expired (Mongo TTL handles deletion but also filter)
+    const stories = await Story.find({ expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 }).limit(100);
+    // Group by user for Instagram style
+    const grouped = {};
+    stories.forEach(s => {
+      if (!grouped[s.userId]) grouped[s.userId] = { userId: s.userId, username: s.username, userAvatar: s.userAvatar, stories: [] };
+      grouped[s.userId].stories.push(s);
+    });
+    res.json(Object.values(grouped));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/stories', authMiddleware, upload.single('image'), async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    let imageUrl = '';
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer, 'axra/stories');
+      imageUrl = result.secure_url;
+    }
+    if (!imageUrl) return res.status(400).json({ error: 'Image required' });
+    const story = await Story.create({
+      userId: user._id,
+      username: user.username,
+      userAvatar: user.avatar,
+      image: imageUrl,
+    });
+    io.emit('newStory', story);
+    res.json(story);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/stories/:id/view', authMiddleware, async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    if (!story) return res.status(404).json({ error: 'Not found' });
+    if (!story.viewedBy.includes(req.userId)) {
+      story.viewedBy.push(req.userId);
+      await story.save();
+    }
+    res.json({ viewed: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== MESSAGES (DM) =====
+app.get('/api/messages/:user', authMiddleware, async (req, res) => {
+  try {
+    const msgs = await Message.find({
+      $or: [{ sender: req.username, receiver: req.params.user }, { sender: req.params.user, receiver: req.username }]
+    }).sort({ createdAt: 1 }).limit(100);
+    res.json(msgs);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Socket.io
+io.on('connection', socket => {
+  console.log('User connected');
+  socket.on('join', username => socket.join(username));
+  socket.on('sendMessage', async data => {
+    const msg = await Message.create(data);
+    io.to(data.receiver).emit('receiveMessage', msg);
+    io.to(data.sender).emit('receiveMessage', msg);
   });
+  socket.on('disconnect', () => console.log('User disconnected'));
 });
 
-app.get('*', (req,res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+// Fallback to index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
 
-server.listen(PORT, () => console.log(`🚀 Axrachat running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Axra V2 running on port ${PORT}`));
