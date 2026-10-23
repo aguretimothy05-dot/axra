@@ -1,5 +1,6 @@
 /**
- * AXRA V2 - Full Backend with Profiles, Stories, Posts, Reels Axragram - Built by Timm
+ * AXRA V2 - Full Backend with Profiles, Stories, Posts, Reels
+ * Ghana's Instagram - Built by Timm
  * Requirements: MONGODB_URI, JWT_SECRET, CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
  */
 
@@ -21,7 +22,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 const PORT = process.env.PORT || 10000;
-const JWT_SECRET = process.env.JWT_SECRET || 'axra_secret_AXRA_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'axra_secret_ghana_2026';
 
 // Cloudinary Config
 cloudinary.config({
