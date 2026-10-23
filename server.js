@@ -1,6 +1,5 @@
 /**
- * AXRA V2 - Full Backend with Profiles, Stories, Posts, Reels
- * Ghana's Instagram - Built by Timm
+ * AXRA V2 - Full Backend with Profiles, Stories, Posts, Reels Axragram - Built by Timm
  * Requirements: MONGODB_URI, JWT_SECRET, CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
  */
 
@@ -22,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 const PORT = process.env.PORT || 10000;
-const JWT_SECRET = process.env.JWT_SECRET || 'axra_secret_ghana_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'axra_secret_AXRA_2026';
 
 // Cloudinary Config
 cloudinary.config({
@@ -42,9 +41,11 @@ if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 app.use(express.static(publicDir));
 
 // MongoDB Connect
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('✅ MongoDB Connected - Axra V2'))
-  .catch(err => console.error('❌ MongoDB Error:', err));
+  .catch(err => console.error('❌ MongoDB Error:', err.message));
+
+if(!process.env.MONGODB_URI && !process.env.MONGO_URI){ console.error('❌ NO MONGO URI FOUND! Set MONGO_URI or MONGODB_URI in Render'); }
 
 // Multer setup (memory storage for Cloudinary)
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
